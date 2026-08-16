@@ -1,4 +1,4 @@
-# DentalSys AI
+# DentalSys
 
 Sistema web de gestión odontológica desarrollado como Proyecto APT / CAPSTONE 2026 (Duoc UC).
 
