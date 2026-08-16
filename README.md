@@ -4,7 +4,7 @@ Sistema web de gestión odontológica desarrollado como Proyecto APT / CAPSTONE 
 
 ## Descripción
 
-**DentalSys AI** es un sistema web de gestión odontológica desarrollado para la clínica **Más Dent**, ubicada en Puente Alto y conformada por dos sucursales.
+**DentalSys** es un sistema web de gestión odontológica desarrollado para la clínica **Más Dent**, ubicada en Puente Alto y conformada por dos sucursales.
 
 ### ¿A quién va dirigido?
 
@@ -14,7 +14,7 @@ Está orientado principalmente al personal administrativo, profesionales de la c
 
 Actualmente parte de los procesos clínicos y administrativos se gestionan mediante registros físicos, cuadernos y herramientas manuales, lo que dificulta el acceso oportuno a la información, puede generar duplicidad de datos y limita el seguimiento organizado de pacientes, tratamientos, presupuestos y horas de atención.
 
-DentalSys AI busca centralizar y digitalizar estos procesos mediante una plataforma web.
+DentalSys busca centralizar y digitalizar estos procesos mediante una plataforma web.
 
 ## Módulos del MVP
 
@@ -97,7 +97,7 @@ La desorganización y falta de centralización de información clínica y admini
 
 ### ¿Qué hace diferente a la solución?
 
-DentalSys AI incorpora un asistente virtual basado en Inteligencia Artificial para funciones de apoyo administrativo, considerando mecanismos de protección de información sensible.
+DentalSys incorpora un asistente virtual basado en Inteligencia Artificial para funciones de apoyo administrativo, considerando mecanismos de protección de información sensible.
 
 ### ¿Qué valor agrega?
 
