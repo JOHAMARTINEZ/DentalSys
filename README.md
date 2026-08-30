@@ -1,33 +1,139 @@
 # DentalSys
 
-Sistema web de gestión odontológica desarrollado como Proyecto APT / CAPSTONE 2026 (Duoc UC).
+Sistema web de gestión odontológica desarrollado como Proyecto APT / CAPSTONE 2026 de Duoc UC.
+
+---
 
 ## Descripción
 
 **DentalSys** es un sistema web de gestión odontológica desarrollado para la clínica **Más Dent**, ubicada en Puente Alto y conformada por dos sucursales.
 
-### ¿A quién va dirigido?
+La solución busca centralizar y digitalizar procesos administrativos y clínicos que actualmente pueden gestionarse mediante registros físicos, cuadernos y herramientas manuales.
 
-Está orientado principalmente al personal administrativo, profesionales de la clínica y pacientes que participan en los procesos de gestión y atención odontológica.
+---
 
-### ¿Qué problema aborda?
+## ¿A quién va dirigido?
 
-Actualmente parte de los procesos clínicos y administrativos se gestionan mediante registros físicos, cuadernos y herramientas manuales, lo que dificulta el acceso oportuno a la información, puede generar duplicidad de datos y limita el seguimiento organizado de pacientes, tratamientos, presupuestos y horas de atención.
+DentalSys está orientado principalmente a los siguientes usuarios:
 
-DentalSys busca centralizar y digitalizar estos procesos mediante una plataforma web.
+- **Administrador**
+- **Recepcionista**
+- **Odontólogo**
+- **Paciente**
+
+El sistema busca facilitar la gestión interna de la clínica y entregar mayor autonomía al paciente mediante un Portal del Paciente.
+
+---
+
+## ¿Qué problema aborda?
+
+Actualmente, parte de los procesos clínicos y administrativos pueden gestionarse mediante registros físicos, cuadernos y herramientas manuales.
+
+Esta situación dificulta:
+
+- El acceso oportuno a la información.
+- La organización de los datos.
+- El seguimiento de pacientes.
+- La gestión de horas de atención.
+- El seguimiento de tratamientos.
+- La gestión de presupuestos.
+- La trazabilidad de la información.
+- La autonomía del paciente.
+
+**DentalSys** busca centralizar y digitalizar estos procesos mediante una plataforma web.
+
+---
+
+## Propuesta de solución
+
+DentalSys propone una plataforma web que permita centralizar la información y apoyar los principales procesos administrativos y clínicos de la clínica.
+
+La solución contempla:
+
+- Gestión de usuarios, roles y permisos.
+- Gestión de pacientes.
+- Gestión de agenda y horas.
+- Gestión de ficha clínica.
+- Gestión de atenciones.
+- Gestión de presupuestos.
+- Portal del Paciente.
+- Asistente virtual basado en Inteligencia Artificial.
+
+---
 
 ## Módulos del MVP
 
-- Gestión de pacientes.
-- Agenda: disponibilidad y reserva de horas.
-- Ficha clínica.
-- Presupuestos.
-- Portal del Paciente: tomar y cancelar horas, consultar próximas atenciones, revisar atenciones pasadas y visualizar presupuestos.
-- Asistente virtual basado en Inteligencia Artificial: apoyo administrativo, sin diagnósticos ni decisiones clínicas.
+El MVP de DentalSys contempla los siguientes módulos:
 
-> Las funcionalidades de laboratorio, pagos avanzados y reportes avanzados quedan como trabajo futuro y no forman parte del MVP actual.
+### Gestión de usuarios y seguridad
 
-## Tecnologías utilizadas
+- Inicio de sesión.
+- Gestión de usuarios.
+- Gestión de roles.
+- Gestión de permisos.
+- Control de acceso según rol.
+
+### Gestión de pacientes
+
+- Registro de pacientes.
+- Consulta de pacientes.
+- Actualización de información.
+- Consulta de pacientes autorizados.
+
+### Agenda y gestión de horas
+
+- Consulta de disponibilidad.
+- Reserva de horas.
+- Cancelación de horas.
+- Reprogramación de horas.
+
+### Ficha clínica y atención
+
+- Consulta de ficha clínica.
+- Registro y actualización de información clínica.
+- Consulta del historial de atenciones.
+- Registro de atenciones.
+- Registro de atención con o sin cita previa.
+
+### Presupuestos
+
+- Creación de presupuestos.
+- Consulta de presupuestos.
+- Actualización de presupuestos.
+- Asociación de tratamientos al presupuesto.
+
+### Portal del Paciente
+
+El paciente podrá:
+
+- Reservar horas.
+- Cancelar horas.
+- Consultar próximas atenciones.
+- Consultar atenciones anteriores.
+- Visualizar sus presupuestos.
+
+### Asistente virtual IA
+
+DentalSys incorpora un asistente virtual basado en Inteligencia Artificial orientado al **apoyo administrativo**.
+
+> El asistente virtual no realiza diagnósticos, prescripciones ni decisiones clínicas.
+
+---
+
+## Funcionalidades fuera del MVP
+
+Las siguientes funcionalidades quedan fuera del alcance actual y podrán considerarse como trabajo futuro:
+
+- Gestión de sucursales.
+- Pagos avanzados.
+- Reportes avanzados.
+- Funcionalidades de laboratorio.
+
+> La clínica Más Dent cuenta con dos sucursales como parte del contexto del caso. Sin embargo, la gestión de sucursales no forma parte del modelo de datos ni del MVP actual de DentalSys.
+
+---
+
+# Tecnologías utilizadas
 
 | Categoría | Tecnología |
 |---|---|
@@ -39,55 +145,38 @@ DentalSys busca centralizar y digitalizar estos procesos mediante una plataforma
 | Gestión del proyecto | Jira |
 | Metodología | Scrum |
 | Pruebas de API | Postman |
+| Rendimiento | Apache JMeter |
 | Inteligencia Artificial | Google AI Studio / Gemini |
 
-## Instrucciones para ejecutar el proyecto localmente
-
-> ⚠️ **Sección en construcción.** Se completará durante la etapa de configuración técnica del proyecto, cuando el backend, frontend y Docker Compose estén inicializados.
-
-Se documentará aquí:
-
-- Requisitos previos (JDK 21, Node.js y Docker).
-- Clonado del repositorio.
-- Variables de entorno necesarias.
-- Configuración de la base de datos.
-- Comando para levantar el proyecto con Docker Compose.
-- URLs locales del frontend y backend.
-
-## Integrante del equipo
-
-**Johanna Martínez Sanhueza**  
-Desarrolladora Full Stack — Autora del proyecto (trabajo individual).
-
-## Metodología de trabajo
-
-El proyecto se desarrolla bajo el marco de trabajo **Scrum**, organizado en Sprints durante las 18 semanas académicas.
-
-| Sprint | Semanas | Foco |
-|---|---|---|
-| Sprint 0 | S1–S2 | Definición, Product Vision y planificación |
-| Sprint 1 | S3–S4 | Requerimientos, arquitectura, UML y modelo de datos |
-| Sprint 2 | S5–S7 | Configuración base + módulo de pacientes |
-| Sprint 3 | S8–S10 | Módulo de agenda + ficha clínica |
-| Sprint 4 | S11–S13 | Módulo de presupuestos + Portal del Paciente |
-| Sprint 5 | S14–S15 | Asistente IA + integración + seguridad + pruebas |
-| Fase 3 | S16–S18 | Correcciones, documentación, presentación y defensa |
-
-El avance de cada Sprint será monitoreado mediante **Burndown Chart**, utilizando Jira para la gestión y seguimiento de las tareas.
+---
 
 ## Arquitectura de la solución
 
-> ⚠️ **Sección en construcción.** Se completará durante la etapa de diseño (S3–S4), incorporando el diagrama de arquitectura y el detalle de los componentes de la solución.
+DentalSys utiliza una arquitectura **monolítica modular**, seleccionada de acuerdo con el alcance y las necesidades del MVP.
 
-### Decisiones arquitectónicas definidas
+La aplicación contempla una separación de responsabilidades mediante capas:
 
-- Arquitectura **monolítica modular**, simplificada y adecuada al alcance del MVP.
-- No se utilizará una arquitectura de microservicios.
-- Separación de responsabilidades mediante capas `Controller`, `Service` y `Repository`.
-- Organización del sistema por módulos funcionales.
-- Uso de Spring Security y JWT para autenticación y autorización.
-- El asistente de IA no tendrá acceso directo a la base de datos.
-- Se contempla implementar mecanismos de protección y anonimización de información sensible antes de enviar información a servicios externos de IA.
+```text
+Frontend
+React + Vite
+   │
+   ▼
+API REST
+   │
+   ▼
+Controller
+   │
+   ▼
+Service
+   │
+   ▼
+Repository
+   │
+   ▼
+MySQL
+```
+
+
 
 ## Innovación
 
@@ -105,6 +194,11 @@ Busca mejorar la organización de la información, facilitar la gestión de hora
 
 ## Estado del proyecto
 
-🚧 **En desarrollo**
+**En desarrollo**
 
-Proyecto académico individual — CAPSTONE 2026, Duoc UC.
+Proyecto académico desarrollado en equipo — **CAPSTONE 2026, Duoc UC**.
+
+## Equipo de trabajo
+
+- **Johanna Martínez Sanhueza** — Desarrolladora Full Stack
+- **Cristian Muñoz** — Desarrollador Full Stack
