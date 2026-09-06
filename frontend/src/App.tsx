@@ -1,7 +1,7 @@
+import Layout from './components/layout/Layout'
+
 function App() {
-  return (
-    <h1>DentalSys</h1>
-  )
+  return <Layout />
 }
 
 export default App
