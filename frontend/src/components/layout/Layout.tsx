@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import { Outlet } from 'react-router-dom'
 
 function Layout() {
   return (
@@ -11,7 +12,7 @@ function Layout() {
         <Header />
 
         <Box sx={{ p: 3 }}>
-          <h1>Contenido de DentalSys</h1>
+          <Outlet />
         </Box>
       </Box>
     </Box>
