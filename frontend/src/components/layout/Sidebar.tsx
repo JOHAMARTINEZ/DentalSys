@@ -6,6 +6,14 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import Divider from '@mui/material/Divider'
 
+const menuItems = [
+  'Inicio',
+  'Pacientes',
+  'Agenda',
+  'Ficha Clínica',
+  'Presupuestos',
+]
+
 function Sidebar() {
   return (
     <Drawer
@@ -20,45 +28,54 @@ function Sidebar() {
         },
       }}
     >
-      <Box sx={{ p: 2 }}>
-        <Typography variant="h6">
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6" fontWeight="bold">
           DentalSys
+        </Typography>
+
+        <Typography variant="body2" color="text.secondary">
+          Gestión Clínica Dental
         </Typography>
       </Box>
 
-      <List>
-        <ListItemButton>
-          <ListItemText primary="Inicio" />
-        </ListItemButton>
+      <Divider />
 
-        <ListItemButton>
-          <ListItemText primary="Pacientes" />
-        </ListItemButton>
-
-        <ListItemButton>
-          <ListItemText primary="Agenda" />
-        </ListItemButton>
-
-        <ListItemButton>
-          <ListItemText primary="Ficha Clínica" />
-        </ListItemButton>
-
-        <ListItemButton>
-          <ListItemText primary="Presupuestos" />
-        </ListItemButton>
+      <List sx={{ px: 1, py: 2 }}>
+        {menuItems.map((item, index) => (
+          <ListItemButton
+            key={item}
+            selected={index === 0}
+            sx={{
+              mb: 0.5,
+              borderRadius: 1,
+            }}
+          >
+            <ListItemText primary={item} />
+          </ListItemButton>
+        ))}
       </List>
 
       <Divider />
 
-      <List>
-        <ListItemButton>
+      <List sx={{ px: 1, py: 1 }}>
+        <ListItemButton
+          sx={{
+            borderRadius: 1,
+          }}
+        >
           <ListItemText primary="Administración" />
         </ListItemButton>
       </List>
 
       <Box sx={{ mt: 'auto' }}>
-        <List>
-          <ListItemButton>
+        <Divider />
+
+        <List sx={{ px: 1, py: 1 }}>
+          <ListItemButton
+            sx={{
+              borderRadius: 1,
+            }}
+          >
             <ListItemText primary="Cerrar sesión" />
           </ListItemButton>
         </List>
