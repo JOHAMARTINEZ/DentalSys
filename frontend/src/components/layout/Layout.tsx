@@ -1,15 +1,29 @@
+import { useState } from 'react'
 import Box from '@mui/material/Box'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import { Outlet } from 'react-router-dom'
 
 function Layout() {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const handleMenuClick = () => {
+    setMobileOpen(!mobileOpen)
+  }
+
+  const handleDrawerClose = () => {
+    setMobileOpen(false)
+  }
+
   return (
     <Box sx={{ display: 'flex' }}>
-      <Sidebar />
+      <Sidebar
+        mobileOpen={mobileOpen}
+        onClose={handleDrawerClose}
+      />
 
       <Box component="main" sx={{ flexGrow: 1 }}>
-        <Header />
+        <Header onMenuClick={handleMenuClick} />
 
         <Box sx={{ p: 3 }}>
           <Outlet />
