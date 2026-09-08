@@ -1,11 +1,18 @@
-import Box from '@mui/material/Box'
 import Drawer from '@mui/material/Drawer'
-import Typography from '@mui/material/Typography'
 import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
+import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
+import Box from '@mui/material/Box'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useMediaQuery, useTheme } from '@mui/material'
+
+interface SidebarProps {
+  mobileOpen: boolean
+  onClose: () => void
+}
 
 const menuItems = [
   { label: 'Inicio', path: '/inicio' },
@@ -15,75 +22,91 @@ const menuItems = [
   { label: 'Presupuestos', path: '/presupuestos' },
 ]
 
-function Sidebar() {
-const navigate = useNavigate()
-const location = useLocation()
+function Sidebar({ mobileOpen, onClose }: SidebarProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: 240,
-        '& .MuiDrawer-paper': {
-          width: 240,
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
-        },
-      }}
-    >
-      <Box sx={{ p: 3 }}>
-       <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-  DentalSys
-</Typography>
-        <Typography variant="body2" color="text.secondary">
+  const handleNavigation = (path: string) => {
+    navigate(path)
+
+    if (isMobile) {
+      onClose()
+    }
+  }
+
+  const drawerContent = (
+    <>
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          DentalSys
+        </Typography>
+
+        <Typography variant="body2">
           Gestión Clínica Dental
         </Typography>
       </Box>
 
       <Divider />
 
-      <List sx={{ px: 1, py: 2 }}>
-        {menuItems.map((item, index) => (
-          <ListItemButton
-  key={item.label}
-selected={location.pathname === item.path}
-onClick={() => navigate(item.path)}
-  sx={{
-    mb: 0.5,
-    borderRadius: 1,
-  }}
->
-  <ListItemText primary={item.label} />
-</ListItemButton>
+      <List sx={{ px: 1 }}>
+        {menuItems.map((item) => (
+          <ListItem key={item.label} disablePadding>
+            <ListItemButton
+              selected={location.pathname === item.path}
+              onClick={() => handleNavigation(item.path)}
+              sx={{
+                mb: 0.5,
+                borderRadius: 1,
+              }}
+            >
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          </ListItem>
         ))}
       </List>
 
-      <Divider />
-
-      <List sx={{ px: 1, py: 1 }}>
+      <Box sx={{ mt: 'auto', p: 1 }}>
         <ListItemButton
           sx={{
+            mb: 0.5,
             borderRadius: 1,
           }}
         >
           <ListItemText primary="Administración" />
         </ListItemButton>
-      </List>
 
-      <Box sx={{ mt: 'auto' }}>
-        <Divider />
-
-        <List sx={{ px: 1, py: 1 }}>
-          <ListItemButton
-            sx={{
-              borderRadius: 1,
-            }}
-          >
-            <ListItemText primary="Cerrar sesión" />
-          </ListItemButton>
-        </List>
+        <ListItemButton
+          sx={{
+            borderRadius: 1,
+          }}
+        >
+          <ListItemText primary="Cerrar sesión" />
+        </ListItemButton>
       </Box>
+    </>
+  )
+
+  return (
+    <Drawer
+      variant={isMobile ? 'temporary' : 'permanent'}
+      open={isMobile ? mobileOpen : true}
+      onClose={onClose}
+      ModalProps={{
+        keepMounted: true,
+      }}
+      sx={{
+        width: { xs: 200, sm: 240 },
+        '& .MuiDrawer-paper': {
+          width: { xs: 200, sm: 240 },
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
+      {drawerContent}
     </Drawer>
   )
 }
