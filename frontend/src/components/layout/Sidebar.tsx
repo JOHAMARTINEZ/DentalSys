@@ -35,6 +35,11 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       onClose()
     }
   }
+  const handleLogout = () => {
+  localStorage.removeItem('dentalsys_token')
+  localStorage.removeItem('dentalsys_username')
+  navigate('/login')
+ }
 
   const drawerContent = (
     <>
@@ -69,20 +74,18 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
       <Box sx={{ mt: 'auto', p: 1 }}>
         <ListItemButton
-          sx={{
-            mb: 0.5,
-            borderRadius: 1,
-          }}
-        >
-          <ListItemText primary="Administración" />
-        </ListItemButton>
-
+  onClick={handleLogout}
+  sx={{
+    borderRadius: 1,
+  }}
+>
+  <ListItemText primary="Cerrar sesión" />
+</ListItemButton>
         <ListItemButton
           sx={{
             borderRadius: 1,
           }}
         >
-          <ListItemText primary="Cerrar sesión" />
         </ListItemButton>
       </Box>
     </>

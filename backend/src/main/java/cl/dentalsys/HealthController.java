@@ -17,4 +17,12 @@ public class HealthController {
                 "application", "DentalSys Backend"
         );
     }
+
+    @GetMapping("/api/authenticated")
+    public Map<String, String> authenticated() {
+        return Map.of(
+                "status", "authenticated",
+                "message", "JWT válido"
+        );
+    }
 }

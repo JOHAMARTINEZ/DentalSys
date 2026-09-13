@@ -25,13 +25,13 @@ function Inicio() {
 
       {health && (
         <Typography sx={{ mt: 2 }}>
-          Backend conectado: {health.application} — estado: {health.status}
+          Backend conectado: {health.application} â€” estado: {health.status}
         </Typography>
       )}
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>
-          Error de conexión: {error}
+          Error de conexiÃ³n: {error}
         </Typography>
       )}
     </>
