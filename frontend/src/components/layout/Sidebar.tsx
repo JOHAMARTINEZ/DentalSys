@@ -14,6 +14,8 @@ interface SidebarProps {
   onClose: () => void
 }
 
+const drawerWidth = 220
+
 const menuItems = [
   { label: 'Inicio', path: '/inicio' },
   { label: 'Pacientes', path: '/pacientes' },
@@ -35,57 +37,116 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       onClose()
     }
   }
+
   const handleLogout = () => {
-  localStorage.removeItem('dentalsys_token')
-  localStorage.removeItem('dentalsys_username')
-  navigate('/login')
- }
+    localStorage.removeItem('dentalsys_token')
+    localStorage.removeItem('dentalsys_username')
+    navigate('/login')
+  }
 
   const drawerContent = (
     <>
-      <Box sx={{ p: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+      <Box
+        sx={{
+          px: 2.5,
+          py: 2.5,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            color: '#1F2937',
+            fontWeight: 700,
+            lineHeight: 1.2,
+          }}
+        >
           DentalSys
         </Typography>
 
-        <Typography variant="body2">
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mt: 0.5 }}
+        >
           Gestión Clínica Dental
         </Typography>
       </Box>
 
       <Divider />
 
-      <List sx={{ px: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.label} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
-              sx={{
-                mb: 0.5,
-                borderRadius: 1,
-              }}
+      <List
+        sx={{
+          px: 1,
+          py: 2,
+        }}
+      >
+        {menuItems.map((item) => {
+          const isSelected = location.pathname === item.path
+
+          return (
+            <ListItem
+              key={item.path}
+              disablePadding
+              sx={{ mb: 0.5 }}
             >
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+              <ListItemButton
+                selected={isSelected}
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  borderRadius: 1.5,
+                  minHeight: 42,
+                  '&.Mui-selected': {
+                    backgroundColor: '#EEF5FF',
+                    color: '#2563EB',
+                    '&:hover': {
+                      backgroundColor: '#E5EFFF',
+                    },
+                  },
+                  '&:hover': {
+                    backgroundColor: '#F9FAFB',
+                  },
+                }}
+              >
+                <ListItemText
+                  primary={item.label}
+                  sx={{
+                    '& .MuiListItemText-primary': {
+                      fontSize: '0.9rem',
+                      fontWeight: isSelected ? 600 : 400,
+                    },
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          )
+        })}
       </List>
 
-      <Box sx={{ mt: 'auto', p: 1 }}>
+      <Box
+        sx={{
+          mt: 'auto',
+          p: 1,
+        }}
+      >
         <ListItemButton
-  onClick={handleLogout}
-  sx={{
-    borderRadius: 1,
-  }}
->
-  <ListItemText primary="Cerrar sesión" />
-</ListItemButton>
-        <ListItemButton
+          onClick={handleLogout}
           sx={{
-            borderRadius: 1,
+            borderRadius: 1.5,
+            minHeight: 42,
+            '&:hover': {
+              backgroundColor: '#FEF2F2',
+              color: '#DC2626',
+            },
           }}
         >
+          <ListItemText
+            primary="Cerrar sesión"
+            sx={{
+              '& .MuiListItemText-primary': {
+                fontSize: '0.9rem',
+              },
+            }}
+          />
         </ListItemButton>
       </Box>
     </>
@@ -100,12 +161,15 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         keepMounted: true,
       }}
       sx={{
-        width: { xs: 200, sm: 240 },
+        width: isMobile ? 280 : drawerWidth,
+        flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: { xs: 200, sm: 240 },
+          width: isMobile ? 280 : drawerWidth,
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
+          borderRight: '1px solid #E5E7EB',
+          backgroundColor: '#FFFFFF',
         },
       }}
     >
