@@ -37,12 +37,20 @@ public class AuthController {
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
         String token = jwtService.generateToken(userDetails);
+
+        String rol = userDetails.getAuthorities()
+                .stream()
+                .findFirst()
+                .map(authority -> authority.getAuthority().replace("ROLE_", ""))
+                .orElse("");
 
         return ResponseEntity.ok(
                 Map.of(
                         "token", token,
-                        "username", userDetails.getUsername()
+                        "username", userDetails.getUsername(),
+                        "rol", rol
                 )
         );
     }
