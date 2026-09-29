@@ -14,6 +14,7 @@ import { apiPost } from '../services/api'
 type LoginResponse = {
   token: string
   username: string
+  rol: string
 }
 
 function Login() {
@@ -38,6 +39,7 @@ function Login() {
 
     localStorage.setItem('dentalsys_token', response.token)
     localStorage.setItem('dentalsys_username', response.username)
+    localStorage.setItem('dentalsys_rol', response.rol)
 
     navigate('/inicio')
   } catch {
