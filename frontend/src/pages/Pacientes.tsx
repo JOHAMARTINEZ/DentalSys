@@ -19,7 +19,10 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import { apiGet, apiPost } from '../services/api'
+import EditIcon from '@mui/icons-material/Edit'
+import BlockIcon from '@mui/icons-material/Block'
+
+import { apiGet, apiPost, apiPut } from '../services/api'
 
 type Paciente = {
   idPaciente: number
@@ -54,16 +57,33 @@ const formularioInicial: NuevoPaciente = {
 }
 
 function Pacientes() {
-  const [pacientes, setPacientes] = useState<Paciente[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+const [pacientes, setPacientes] = useState<Paciente[]>([])
+const [loading, setLoading] = useState(true)
+const [error, setError] = useState('')
+const [busqueda, setBusqueda] = useState('')
 
-  const [openDialog, setOpenDialog] = useState(false)
-  const [guardando, setGuardando] = useState(false)
-  const [errorFormulario, setErrorFormulario] = useState('')
+const [openDialog, setOpenDialog] = useState(false)
+const [guardando, setGuardando] = useState(false)
+const [errorFormulario, setErrorFormulario] = useState('')
 
-  const [formulario, setFormulario] =
+const [formulario, setFormulario] =
     useState<NuevoPaciente>(formularioInicial)
+const [pacienteEditando, setPacienteEditando] =
+    useState<Paciente | null>(null)
+const pacientesFiltrados = pacientes.filter((paciente) => {
+const texto = busqueda.toLowerCase().trim()
+
+  if (!texto) {
+    return true
+  }
+
+  return (
+    paciente.rut.toLowerCase().includes(texto) ||
+    paciente.nombres.toLowerCase().includes(texto) ||
+    paciente.apellidos.toLowerCase().includes(texto)
+  )
+})
+
 
   useEffect(() => {
     cargarPacientes()
@@ -74,7 +94,7 @@ function Pacientes() {
       setLoading(true)
       setError('')
 
-      const data = await apiGet<Paciente[]>('/api/pacientes')
+  const data = await apiGet<Paciente[]>('/api/pacientes')
       setPacientes(data)
     } catch {
       setError('No fue posible cargar los pacientes.')
@@ -84,22 +104,40 @@ function Pacientes() {
   }
 
   const abrirFormulario = () => {
-    setFormulario(formularioInicial)
-    setErrorFormulario('')
-    setOpenDialog(true)
+      setPacienteEditando(null)
+      setFormulario(formularioInicial)
+      setErrorFormulario('')
+      setOpenDialog(true)
   }
 
+  const abrirEdicion = (paciente: Paciente) => {
+  setPacienteEditando(paciente)
+
+  setFormulario({
+    rut: paciente.rut,
+    nombres: paciente.nombres,
+    apellidos: paciente.apellidos,
+    fechaNacimiento: paciente.fechaNacimiento,
+    telefono: paciente.telefono || '',
+    correo: paciente.correo || '',
+    direccion: paciente.direccion || '',
+  })
+ 
+  setErrorFormulario('')
+  setOpenDialog(true)
+}
   const cerrarFormulario = () => {
     if (!guardando) {
-      setOpenDialog(false)
-      setErrorFormulario('')
-    }
+    setOpenDialog(false)
+    setErrorFormulario('')
+    setPacienteEditando(null)
   }
+}
 
   const manejarCambio = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const { name, value } = event.target
+  const { name, value } = event.target
 
     setFormulario((actual) => ({
       ...actual,
@@ -108,26 +146,45 @@ function Pacientes() {
   }
 
   const registrarPaciente = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault()
+  event: React.FormEvent<HTMLFormElement>,
+) => {
+  event.preventDefault()
 
-    setErrorFormulario('')
+  setErrorFormulario('')
 
-    if (
-      !formulario.rut ||
-      !formulario.nombres ||
-      !formulario.apellidos ||
-      !formulario.fechaNacimiento
-    ) {
-      setErrorFormulario(
-        'Completa los campos obligatorios.',
+  if (
+    !formulario.nombres ||
+    !formulario.apellidos ||
+    !formulario.fechaNacimiento
+  ) {
+    setErrorFormulario(
+      'Completa los campos obligatorios.',
+    )
+    return
+  }
+
+  try {
+    setGuardando(true)
+
+    if (pacienteEditando) {
+      await apiPut<Paciente>(
+        `/api/pacientes/${pacienteEditando.idPaciente}`,
+        {
+          nombres: formulario.nombres,
+          apellidos: formulario.apellidos,
+          fechaNacimiento: formulario.fechaNacimiento,
+          telefono: formulario.telefono || null,
+          correo: formulario.correo || null,
+          direccion: formulario.direccion || null,
+        },
       )
-      return
-    }
-
-    try {
-      setGuardando(true)
+    } else {
+      if (!formulario.rut) {
+        setErrorFormulario(
+          'El RUT es obligatorio.',
+        )
+        return
+      }
 
       await apiPost<Paciente>('/api/pacientes', {
         rut: formulario.rut,
@@ -139,19 +196,68 @@ function Pacientes() {
         direccion: formulario.direccion || null,
         estado: 1,
       })
-
-      setOpenDialog(false)
-      setFormulario(formularioInicial)
-
-      await cargarPacientes()
-    } catch {
-      setErrorFormulario(
-        'No fue posible registrar el paciente. Verifica que el RUT no esté registrado.',
-      )
-    } finally {
-      setGuardando(false)
     }
+
+    setOpenDialog(false)
+    setFormulario(formularioInicial)
+    setPacienteEditando(null)
+
+    await cargarPacientes()
+  } catch {
+    setErrorFormulario(
+      pacienteEditando
+        ? 'No fue posible actualizar el paciente.'
+        : 'No fue posible registrar el paciente. Verifica que el RUT no esté registrado.',
+    )
+  } finally {
+    setGuardando(false)
   }
+}
+
+const desactivarPaciente = async (paciente: Paciente) => {
+  const confirmar = window.confirm(
+    `¿Está seguro de que desea desactivar al paciente ${paciente.nombres} ${paciente.apellidos}?`,
+  )
+
+  if (!confirmar) {
+    return
+  }
+
+  try {
+    setError('')
+
+    await apiPut<Paciente>(
+      `/api/pacientes/${paciente.idPaciente}/desactivar`,
+      {},
+    )
+
+    await cargarPacientes()
+  } catch {
+    setError('No fue posible desactivar el paciente.')
+  }
+}
+
+const activarPaciente = async (paciente: Paciente) => {
+  const confirmar = window.confirm(
+    `¿Está seguro de que desea activar al paciente ${paciente.nombres} ${paciente.apellidos}?`,
+  )
+
+  if (!confirmar) return
+
+  try {
+    setError('')
+
+    await apiPut<Paciente>(
+      `/api/pacientes/${paciente.idPaciente}/activar`,
+      {},
+    )
+
+    await cargarPacientes()
+  } catch {
+    setError('No fue posible activar el paciente.')
+  }
+}
+
 
   return (
     <Box>
@@ -190,6 +296,20 @@ function Pacientes() {
         </Alert>
       )}
 
+      {/* Búsqueda */}
+      <Box sx={{ mb: 2 }}>
+      <TextField
+       fullWidth
+        label="Buscar paciente"
+        placeholder="Buscar por nombre, apellido o RUT"
+        value={busqueda}
+        onChange={(event) => setBusqueda(event.target.value)}
+      />
+    </Box>
+
+
+
+
       {/* Tabla */}
       <TableContainer component={Paper} elevation={2}>
         {loading ? (
@@ -203,13 +323,16 @@ function Pacientes() {
           >
             <CircularProgress />
           </Box>
-        ) : pacientes.length === 0 ? (
+        ) : pacientesFiltrados.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">
-              No hay pacientes registrados.
-            </Typography>
-          </Box>
-        ) : (
+          <Typography color="text.secondary">
+          {busqueda
+          ? 'No se encontraron pacientes.'
+          : 'No hay pacientes registrados.'}
+         </Typography>
+         </Box>
+        )
+       : (
           <Table>
             <TableHead>
               <TableRow>
@@ -236,12 +359,17 @@ function Pacientes() {
                 <TableCell>
                   <strong>Estado</strong>
                 </TableCell>
+
+                <TableCell>
+                <strong>Acciones</strong>
+                </TableCell>
+
+
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {pacientes.map((paciente) => (
-                <TableRow
+                  {pacientesFiltrados.map((paciente) => (                <TableRow
                   key={paciente.idPaciente}
                   hover
                 >
@@ -270,6 +398,35 @@ function Pacientes() {
                       ? 'Activo'
                       : 'Inactivo'}
                   </TableCell>
+                  <TableCell>
+                  <Button
+                  size="small"
+                  startIcon={<EditIcon />}
+                  onClick={() => abrirEdicion(paciente)}
+                  >
+                  Editar
+                  </Button>
+
+                  {paciente.estado === 1 ? (
+                  <Button
+                  size="small"
+                  startIcon={<BlockIcon />}
+                  onClick={() => desactivarPaciente(paciente)}
+                  >
+                  Desactivar
+                  </Button>
+                  ) : (
+                <Button
+                size="small"
+                startIcon={<BlockIcon />}
+                onClick={() => activarPaciente(paciente)}
+                >
+                Activar
+                </Button>
+                 )}
+                </TableCell>
+
+                  
                 </TableRow>
               ))}
             </TableBody>
@@ -288,9 +445,11 @@ function Pacientes() {
           component="form"
           onSubmit={registrarPaciente}
         >
-          <DialogTitle>
-            Registrar nuevo paciente
-          </DialogTitle>
+        <DialogTitle>
+         {pacienteEditando
+         ? 'Editar paciente'
+         : 'Registrar nuevo paciente'}
+         </DialogTitle>
 
           <DialogContent>
             {errorFormulario && (
@@ -308,6 +467,7 @@ function Pacientes() {
               onChange={manejarCambio}
               margin="normal"
               placeholder="12.345.678-9"
+              disabled={Boolean(pacienteEditando)}
             />
 
             <TextField
@@ -389,8 +549,10 @@ function Pacientes() {
               disabled={guardando}
             >
               {guardando
-                ? 'Guardando...'
-                : 'Guardar paciente'}
+              ? 'Guardando...'
+              : pacienteEditando
+              ? 'Actualizar paciente'
+              : 'Guardar paciente'}
             </Button>
           </DialogActions>
         </Box>

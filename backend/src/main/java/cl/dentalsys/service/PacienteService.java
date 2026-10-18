@@ -38,4 +38,76 @@ public class PacienteService {
 
         return pacienteRepository.save(paciente);
     }
+    public Optional<Paciente> actualizarPaciente(Integer id, Paciente datos) {
+
+    if (datos.getNombres() == null || datos.getNombres().isBlank()) {
+        throw new IllegalArgumentException(
+                "El nombre del paciente es obligatorio."
+        );
+    }
+
+    if (datos.getApellidos() == null || datos.getApellidos().isBlank()) {
+        throw new IllegalArgumentException(
+                "Los apellidos del paciente son obligatorios."
+        );
+    }
+
+    if (datos.getTelefono() == null || datos.getTelefono().isBlank()) {
+        throw new IllegalArgumentException(
+                "El teléfono de contacto es obligatorio."
+        );
+    }
+
+    if (datos.getFechaNacimiento() == null) {
+        throw new IllegalArgumentException(
+                "La fecha de nacimiento es obligatoria."
+        );
+    }
+
+    if (datos.getFechaNacimiento().isAfter(java.time.LocalDate.now())) {
+        throw new IllegalArgumentException(
+                "La fecha de nacimiento no puede ser futura."
+        );
+    }
+
+    if (datos.getCorreo() != null
+            && !datos.getCorreo().isBlank()
+            && !datos.getCorreo().contains("@")) {
+        throw new IllegalArgumentException(
+                "El correo electrónico no es válido."
+        );
+    }
+
+    return pacienteRepository.findById(id)
+            .map(paciente -> {
+
+                paciente.setNombres(datos.getNombres().trim());
+                paciente.setApellidos(datos.getApellidos().trim());
+                paciente.setFechaNacimiento(datos.getFechaNacimiento());
+                paciente.setTelefono(datos.getTelefono().trim());
+                paciente.setCorreo(datos.getCorreo());
+                paciente.setDireccion(datos.getDireccion());
+
+                return pacienteRepository.save(paciente);
+            });
+}
+
+    public Optional<Paciente> desactivarPaciente(Integer id) {
+
+        return pacienteRepository.findById(id)
+                .map(paciente -> {
+                    paciente.setEstado(0);
+                    return pacienteRepository.save(paciente);
+                });
+    }
+
+     public Optional<Paciente> activarPaciente(Integer id) {
+
+    return pacienteRepository.findById(id)
+            .map(paciente -> {
+                paciente.setEstado(1);
+                return pacienteRepository.save(paciente);
+            });
+}
+
 }

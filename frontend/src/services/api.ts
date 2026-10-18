@@ -17,6 +17,29 @@ export async function apiGet<T>(endpoint: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
+export async function apiPut<T>(
+  endpoint: string,
+  body: unknown,
+): Promise<T> {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error HTTP: ${response.status}`)
+  }
+
+  return response.json() as Promise<T>
+}
+
+
+
+
 export async function apiPost<T>(
   endpoint: string,
   body: unknown,
