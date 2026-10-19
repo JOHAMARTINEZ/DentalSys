@@ -12,7 +12,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "http://localhost:5175"
+     })
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -37,12 +40,20 @@ public class AuthController {
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
         String token = jwtService.generateToken(userDetails);
+
+        String rol = userDetails.getAuthorities()
+                .stream()
+                .findFirst()
+                .map(authority -> authority.getAuthority().replace("ROLE_", ""))
+                .orElse("");
 
         return ResponseEntity.ok(
                 Map.of(
                         "token", token,
-                        "username", userDetails.getUsername()
+                        "username", userDetails.getUsername(),
+                        "rol", rol
                 )
         );
     }
