@@ -4,7 +4,9 @@ import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
 import Avatar from '@mui/material/Avatar'
+import Chip from '@mui/material/Chip'
 import MenuIcon from '@mui/icons-material/Menu'
+import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined'
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -12,6 +14,8 @@ interface HeaderProps {
 
 function Header({ onMenuClick }: HeaderProps) {
   const username = localStorage.getItem('dentalsys_username') || 'Usuario'
+
+  const initial = username.charAt(0).toUpperCase()
 
   return (
     <AppBar
@@ -42,24 +46,58 @@ function Header({ onMenuClick }: HeaderProps) {
           <MenuIcon />
         </IconButton>
 
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography
-            variant="h6"
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.2,
+            flexGrow: 1,
+          }}
+        >
+          <Box
             sx={{
-              fontWeight: 700,
-              lineHeight: 1.2,
-              fontSize: { xs: '1rem', sm: '1.15rem' },
+              width: 38,
+              height: 38,
+              borderRadius: 2,
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#EEF5FF',
+              color: '#2563EB',
             }}
           >
-            Gestión Clínica Dental
-          </Typography>
+            <MedicalServicesOutlinedIcon fontSize="small" />
+          </Box>
+
+          <Box>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.2,
+                fontSize: { xs: '1rem', sm: '1.1rem' },
+                color: '#1F2937',
+              }}
+            >
+              Gestión Clínica Dental
+            </Typography>
+
+            <Typography
+              variant="caption"
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                color: '#6B7280',
+              }}
+            >
+              Administración de la clínica
+            </Typography>
+          </Box>
         </Box>
 
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
+            gap: 1.2,
           }}
         >
           <Box
@@ -73,30 +111,41 @@ function Header({ onMenuClick }: HeaderProps) {
               sx={{
                 fontWeight: 600,
                 color: '#1F2937',
+                lineHeight: 1.3,
               }}
             >
               {username}
             </Typography>
 
-            <Typography
-              variant="caption"
-              color="text.secondary"
-            >
-              Usuario conectado
-            </Typography>
+            <Chip
+              label="Sesión activa"
+              size="small"
+              sx={{
+                mt: 0.4,
+                height: 20,
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                backgroundColor: '#ECFDF5',
+                color: '#059669',
+                '& .MuiChip-label': {
+                  px: 1,
+                },
+              }}
+            />
           </Box>
 
           <Avatar
             sx={{
-              width: 38,
-              height: 38,
-              backgroundColor: '#E8F0FE',
+              width: 40,
+              height: 40,
+              backgroundColor: '#EEF5FF',
               color: '#2563EB',
-              fontSize: '0.9rem',
-              fontWeight: 600,
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              border: '2px solid #E5EFFF',
             }}
           >
-            {username.charAt(0).toUpperCase()}
+            {initial}
           </Avatar>
         </Box>
       </Toolbar>

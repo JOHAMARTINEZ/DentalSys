@@ -2,6 +2,7 @@ import Drawer from '@mui/material/Drawer'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
+import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
@@ -9,19 +10,47 @@ import Box from '@mui/material/Box'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMediaQuery, useTheme } from '@mui/material'
 
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
+import PeopleIcon from '@mui/icons-material/People'
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined'
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
+import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined'
+
 interface SidebarProps {
   mobileOpen: boolean
   onClose: () => void
 }
 
-const drawerWidth = 220
+const drawerWidth = 250
 
 const menuItems = [
-  { label: 'Inicio', path: '/inicio' },
-  { label: 'Pacientes', path: '/pacientes' },
-  { label: 'Agenda', path: '/agenda' },
-  { label: 'Ficha Clínica', path: '/ficha-clinica' },
-  { label: 'Presupuestos', path: '/presupuestos' },
+  {
+    label: 'Inicio',
+    path: '/gestion/inicio',
+    icon: <HomeOutlinedIcon />,
+  },
+  {
+    label: 'Pacientes',
+    path: '/gestion/pacientes',
+    icon: <PeopleIcon />,
+  },
+  {
+    label: 'Agenda',
+    path: '/gestion/agenda',
+    icon: <CalendarMonthOutlinedIcon />,
+  },
+  {
+    label: 'Ficha Clínica',
+    path: '/gestion/ficha-clinica',
+    icon: <DescriptionOutlinedIcon />,
+  },
+  {
+    label: 'Presupuestos',
+    path: '/gestion/presupuestos',
+    icon: <RequestQuoteOutlinedIcon />,
+  },
 ]
 
 function Sidebar({ mobileOpen, onClose }: SidebarProps) {
@@ -49,37 +78,73 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       <Box
         sx={{
           px: 2.5,
-          py: 2.5,
+          py: 3,
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
-            color: '#1F2937',
-            fontWeight: 700,
-            lineHeight: 1.2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.2,
           }}
         >
-          DentalSys
-        </Typography>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#EEF5FF',
+              color: '#2563EB',
+            }}
+          >
+            <MedicalServicesOutlinedIcon />
+          </Box>
 
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 0.5 }}
-        >
-          Gestión Clínica Dental
-        </Typography>
+          <Box>
+            <Typography
+              sx={{
+                color: '#1F2937',
+                fontWeight: 800,
+                fontSize: '1.15rem',
+                lineHeight: 1.2,
+              }}
+            >
+              DentalSys
+            </Typography>
+
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#6B7280',
+              }}
+            >
+              Gestión Clínica Dental
+            </Typography>
+          </Box>
+        </Box>
       </Box>
 
       <Divider />
 
-      <List
-        sx={{
-          px: 1,
-          py: 2,
-        }}
-      >
+      <Box sx={{ px: 1.5, py: 2 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            px: 1.5,
+            color: '#9CA3AF',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+          }}
+        >
+          Menú principal
+        </Typography>
+      </Box>
+
+      <List sx={{ px: 1.5, pt: 0 }}>
         {menuItems.map((item) => {
           const isSelected = location.pathname === item.path
 
@@ -87,32 +152,47 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             <ListItem
               key={item.path}
               disablePadding
-              sx={{ mb: 0.5 }}
+              sx={{ mb: 0.7 }}
             >
               <ListItemButton
                 selected={isSelected}
                 onClick={() => handleNavigation(item.path)}
                 sx={{
-                  borderRadius: 1.5,
-                  minHeight: 42,
+                  minHeight: 46,
+                  px: 1.5,
+                  borderRadius: 2,
+                  color: isSelected ? '#2563EB' : '#4B5563',
+
                   '&.Mui-selected': {
                     backgroundColor: '#EEF5FF',
                     color: '#2563EB',
+                    fontWeight: 600,
+
                     '&:hover': {
                       backgroundColor: '#E5EFFF',
                     },
                   },
+
                   '&:hover': {
                     backgroundColor: '#F9FAFB',
                   },
                 }}
               >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 38,
+                    color: 'inherit',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+
                 <ListItemText
                   primary={item.label}
                   sx={{
                     '& .MuiListItemText-primary': {
-                      fontSize: '0.9rem',
-                      fontWeight: isSelected ? 600 : 400,
+                      fontSize: '0.92rem',
+                      fontWeight: isSelected ? 600 : 500,
                     },
                   }}
                 />
@@ -122,28 +202,40 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         })}
       </List>
 
-      <Box
-        sx={{
-          mt: 'auto',
-          p: 1,
-        }}
-      >
+      <Box sx={{ flexGrow: 1 }} />
+
+      <Divider />
+
+      <Box sx={{ p: 1.5 }}>
         <ListItemButton
           onClick={handleLogout}
           sx={{
-            borderRadius: 1.5,
-            minHeight: 42,
+            minHeight: 46,
+            px: 1.5,
+            borderRadius: 2,
+            color: '#6B7280',
+
             '&:hover': {
               backgroundColor: '#FEF2F2',
               color: '#DC2626',
             },
           }}
         >
+          <ListItemIcon
+            sx={{
+              minWidth: 38,
+              color: 'inherit',
+            }}
+          >
+            <LogoutOutlinedIcon />
+          </ListItemIcon>
+
           <ListItemText
             primary="Cerrar sesión"
             sx={{
               '& .MuiListItemText-primary': {
-                fontSize: '0.9rem',
+                fontSize: '0.92rem',
+                fontWeight: 500,
               },
             }}
           />
@@ -163,6 +255,7 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       sx={{
         width: isMobile ? 280 : drawerWidth,
         flexShrink: 0,
+
         '& .MuiDrawer-paper': {
           width: isMobile ? 280 : drawerWidth,
           boxSizing: 'border-box',

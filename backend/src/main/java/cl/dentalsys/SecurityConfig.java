@@ -89,9 +89,12 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/health",
-                                "/api/auth/login",
-                                "/error"
+                        "/api/health",
+                        "/api/auth/login",
+                        "/api/odontologos",
+                        "/api/sucursales",
+                        "/api/citas/reserva-publica",
+                        "/error"
                         ).permitAll()
 
                         .requestMatchers(

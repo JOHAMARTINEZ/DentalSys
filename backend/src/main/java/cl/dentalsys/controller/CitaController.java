@@ -5,6 +5,10 @@ import cl.dentalsys.service.CitaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import cl.dentalsys.dto.ReservaPublicaRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -67,7 +71,15 @@ public class CitaController {
     @PostMapping
     public ResponseEntity<Cita> crearCita(
             @RequestBody Cita cita) {
-        return ResponseEntity.ok(citaService.guardar(cita));
+        return ResponseEntity.status(HttpStatus.CREATED)
+        .body(citaService.guardar(cita));   
+    }
+    @PostMapping("/reserva-publica")
+    public ResponseEntity<Cita> reservarPublicamente(
+         @RequestBody ReservaPublicaRequest request) {
+
+    return ResponseEntity.status(HttpStatus.CREATED)
+            .body(citaService.reservarPublicamente(request));
     }
 
     @DeleteMapping("/{id}")

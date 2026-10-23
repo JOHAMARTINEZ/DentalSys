@@ -1,6 +1,7 @@
 package cl.dentalsys.repository;
 
 import cl.dentalsys.model.Cita;
+import cl.dentalsys.model.EstadoCita;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -18,4 +19,10 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
     List<Cita> findByOdontologoIdUsuario(Integer idUsuario);
 
     List<Cita> findBySucursalIdSucursal(Integer idSucursal);
+     boolean existsByOdontologoIdUsuarioAndFechaHoraAndEstadoIn(
+            Integer idUsuario,
+            LocalDateTime fechaHora,
+            List<EstadoCita> estados
+    );
+
 }

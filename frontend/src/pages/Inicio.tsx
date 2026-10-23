@@ -8,11 +8,17 @@ import {
   Button,
   Chip,
   Stack,
+  Avatar,
 } from '@mui/material'
+
 import PeopleIcon from '@mui/icons-material/People'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote'
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices'
+import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformationOutlined'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+
 import { useNavigate } from 'react-router-dom'
 import { apiGet } from '../services/api'
 
@@ -26,21 +32,29 @@ const resumen = [
     titulo: 'Pacientes registrados',
     valor: '128',
     icono: <PeopleIcon />,
+    color: '#2563EB',
+    background: '#EEF5FF',
   },
   {
     titulo: 'Citas de hoy',
     valor: '12',
     icono: <CalendarMonthIcon />,
+    color: '#2563EB',
+    background: '#EEF5FF',
   },
   {
     titulo: 'Presupuestos pendientes',
     valor: '8',
     icono: <RequestQuoteIcon />,
+    color: '#2563EB',
+    background: '#EEF5FF',
   },
   {
     titulo: 'Atenciones del día',
     valor: '10',
     icono: <MedicalServicesIcon />,
+    color: '#2563EB',
+    background: '#EEF5FF',
   },
 ]
 
@@ -75,90 +89,204 @@ function Inicio() {
 
   return (
     <Box>
+      {/* Encabezado */}
       <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
+        <Stack
+          direction="row"
+          spacing={1.5}
           sx={{
-            fontWeight: 700,
+            alignItems: 'center',
           }}
         >
-          Bienvenido a DentalSys
-        </Typography>
+          <Avatar
+            variant="rounded"
+            sx={{
+              width: 46,
+              height: 46,
+              backgroundColor: '#EEF5FF',
+              color: '#2563EB',
+            }}
+          >
+            <MedicalInformationOutlinedIcon fontSize="medium" />
+          </Avatar>
+
+          <Typography
+            sx={{
+              fontSize: { xs: '1.7rem', sm: '2rem' },
+              fontWeight: 800,
+              color: '#1F2937',
+            }}
+          >
+            Bienvenido a DentalSys
+          </Typography>
+        </Stack>
 
         <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ mt: 1 }}
+          sx={{
+            mt: 0.8,
+            color: '#6B7280',
+            fontSize: '0.98rem',
+          }}
         >
           Resumen general de la gestión de la clínica dental.
         </Typography>
       </Box>
 
-      <Grid container spacing={3}>
+      {/* Tarjetas de resumen */}
+      <Grid container spacing={2.5}>
         {resumen.map((item) => (
-          <Grid key={item.titulo} size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-               <Stack
-                  direction="row"
+          <Grid
+            key={item.titulo}
+            size={{ xs: 12, sm: 6, md: 3 }}
+          >
+            <Card
+              elevation={0}
+              sx={{
+                height: '100%',
+                border: '1px solid #E5E7EB',
+                borderRadius: 3,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow:
+                    '0 8px 24px rgba(15, 23, 42, 0.08)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 2.5 }}>
+                <Box
                   sx={{
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
                   }}
-                  >
+                >
                   <Box>
                     <Typography
-                      variant="body2"
-                      color="text.secondary"
+                      sx={{
+                        color: '#6B7280',
+                        fontSize: '0.84rem',
+                        fontWeight: 500,
+                      }}
                     >
                       {item.titulo}
                     </Typography>
 
                     <Typography
-                      variant="h4"
                       sx={{
                         mt: 1,
-                        fontWeight: 700,
+                        fontSize: '2rem',
+                        fontWeight: 800,
+                        color: '#1F2937',
                       }}
                     >
                       {item.valor}
                     </Typography>
                   </Box>
 
-                  {item.icono}
-                </Stack>
+                  <Avatar
+                    variant="rounded"
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      backgroundColor: item.background,
+                      color: item.color,
+                    }}
+                  >
+                    {item.icono}
+                  </Avatar>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
         ))}
 
+        {/* Próximas citas */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card>
-            <CardContent>
-              <Typography
-                variant="h6"
+          <Card
+            elevation={0}
+            sx={{
+              border: '1px solid #E5E7EB',
+              borderRadius: 3,
+              height: '100%',
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box
                 sx={{
-                  mb: 2,
-                  fontWeight: 700,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2.5,
                 }}
               >
-                Próximas citas
-              </Typography>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontWeight: 750,
+                      fontSize: '1.1rem',
+                      color: '#1F2937',
+                    }}
+                  >
+                    Próximas citas
+                  </Typography>
 
-              <Stack spacing={2}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mt: 0.4,
+                      color: '#9CA3AF',
+                    }}
+                  >
+                    Agenda de hoy
+                  </Typography>
+                </Box>
+
+                <Button
+                  size="small"
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={() =>
+                    navigate('/gestion/agenda')
+                  }
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: '#2563EB',
+                  }}
+                >
+                  Ver agenda
+                </Button>
+              </Box>
+
+              <Stack spacing={1.2}>
                 {proximasCitas.map((cita) => (
                   <Box
                     key={`${cita.hora}-${cita.paciente}`}
                     sx={{
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
+                      gap: 2,
+                      p: 1.5,
+                      borderRadius: 2,
+                      backgroundColor: '#F9FAFB',
                     }}
                   >
-                    <Box>
+                    <Chip
+                      label={cita.hora}
+                      size="small"
+                      sx={{
+                        minWidth: 58,
+                        fontWeight: 700,
+                        backgroundColor: '#EEF5FF',
+                        color: '#2563EB',
+                      }}
+                    />
+
+                    <Box sx={{ flexGrow: 1 }}>
                       <Typography
                         sx={{
-                          fontWeight: 600,
+                          fontWeight: 650,
+                          color: '#1F2937',
                         }}
                       >
                         {cita.paciente}
@@ -166,13 +294,14 @@ function Inicio() {
 
                       <Typography
                         variant="body2"
-                        color="text.secondary"
+                        sx={{
+                          color: '#6B7280',
+                          mt: 0.2,
+                        }}
                       >
                         {cita.motivo}
                       </Typography>
                     </Box>
-
-                    <Chip label={cita.hora} />
                   </Box>
                 ))}
               </Stack>
@@ -180,44 +309,103 @@ function Inicio() {
           </Card>
         </Grid>
 
+        {/* Accesos rápidos */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card>
-            <CardContent>
+          <Card
+            elevation={0}
+            sx={{
+              border: '1px solid #E5E7EB',
+              borderRadius: 3,
+              height: '100%',
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
               <Typography
-                variant="h6"
                 sx={{
-                  mb: 2,
-                  fontWeight: 700,
+                  fontWeight: 750,
+                  fontSize: '1.1rem',
+                  color: '#1F2937',
                 }}
               >
                 Accesos rápidos
               </Typography>
 
-              <Stack spacing={1.5}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mt: 0.4,
+                  mb: 2.5,
+                  color: '#9CA3AF',
+                }}
+              >
+                Accede rápidamente a los módulos principales.
+              </Typography>
+
+              <Stack spacing={1.2}>
                 <Button
+                  fullWidth
                   variant="outlined"
-                  onClick={() => navigate('/pacientes')}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={() =>
+                    navigate('/gestion/pacientes')
+                  }
+                  sx={{
+                    justifyContent: 'space-between',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                    py: 1.1,
+                  }}
                 >
                   Gestionar pacientes
                 </Button>
 
                 <Button
+                  fullWidth
                   variant="outlined"
-                  onClick={() => navigate('/agenda')}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={() =>
+                    navigate('/gestion/agenda')
+                  }
+                  sx={{
+                    justifyContent: 'space-between',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                    py: 1.1,
+                  }}
                 >
                   Revisar agenda
                 </Button>
 
                 <Button
+                  fullWidth
                   variant="outlined"
-                  onClick={() => navigate('/ficha-clinica')}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={() =>
+                    navigate('/gestion/ficha-clinica')
+                  }
+                  sx={{
+                    justifyContent: 'space-between',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                    py: 1.1,
+                  }}
                 >
                   Fichas clínicas
                 </Button>
 
                 <Button
+                  fullWidth
                   variant="outlined"
-                  onClick={() => navigate('/presupuestos')}
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={() =>
+                    navigate('/gestion/presupuestos')
+                  }
+                  sx={{
+                    justifyContent: 'space-between',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                    py: 1.1,
+                  }}
                 >
                   Presupuestos
                 </Button>
@@ -226,33 +414,64 @@ function Inicio() {
           </Card>
         </Grid>
 
+        {/* Estado del sistema */}
         <Grid size={{ xs: 12 }}>
-          <Card>
-            <CardContent>
-              <Typography
-                variant="h6"
+          <Card
+            elevation={0}
+            sx={{
+              border: '1px solid #E5E7EB',
+              borderRadius: 3,
+              backgroundColor: '#FFFFFF',
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Box
                 sx={{
-                  fontWeight: 700,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
                 }}
               >
-                Estado del sistema
-              </Typography>
+                <CheckCircleIcon
+                  sx={{
+                    color: health ? '#2563EB' : '#9CA3AF',
+                  }}
+                />
 
-              {health && (
-                <Typography sx={{ mt: 1 }}>
-                  Backend conectado: {health.application} — estado:{' '}
-                  {health.status}
-                </Typography>
-              )}
+                <Box>
+                  <Typography
+                    sx={{
+                      fontWeight: 650,
+                      color: '#1F2937',
+                    }}
+                  >
+                    Estado del sistema
+                  </Typography>
 
-              {error && (
-                <Typography
-                  color="error"
-                  sx={{ mt: 1 }}
-                >
-                  Error de conexión: {error}
-                </Typography>
-              )}
+                  {health && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#6B7280',
+                        mt: 0.3,
+                      }}
+                    >
+                      Backend conectado: {health.application} ·
+                      Estado: {health.status}
+                    </Typography>
+                  )}
+
+                  {error && (
+                    <Typography
+                      variant="body2"
+                      color="error"
+                      sx={{ mt: 0.3 }}
+                    >
+                      Error de conexión: {error}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
