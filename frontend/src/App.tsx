@@ -11,6 +11,7 @@ import Pacientes from './pages/Pacientes'
 import Agenda from './pages/Agenda'
 import FichaClinica from './pages/FichaClinica'
 import Presupuestos from './pages/Presupuestos'
+import Usuarios from './pages/Usuarios'
 
 import PortalPaciente from './pages/PortalPaciente'
 import MisCitas from './pages/MisCitas'
@@ -33,79 +34,47 @@ function App() {
             PORTAL DEL PACIENTE
             Solo PACIENTE
         ========================= */}
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={['PACIENTE']} />
-          }
-        >
+        <Route element={<ProtectedRoute allowedRoles={['PACIENTE']} />}>
           <Route path="/portal" element={<PortalPaciente />} />
           <Route path="/portal/citas" element={<MisCitas />} />
-          <Route
-            path="/portal/reservar-cita"
-            element={<ReservarCita />}
-          />
+          <Route path="/portal/reservar-cita" element={<ReservarCita />} />
         </Route>
 
         {/* =========================
             PORTAL DE GESTIÓN
             ADMIN / ODONTOLOGO / RECEPCIONISTA
+            Cada página tiene además sus propios roles
+            (los mismos que muestra el menú en Sidebar.tsx).
         ========================= */}
-        <Route
-          element={
-            <ProtectedRoute
-              allowedRoles={[
-                'ADMIN',
-                'ODONTOLOGO',
-                'RECEPCIONISTA',
-              ]}
-            />
-          }
-        >
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ODONTOLOGO', 'RECEPCIONISTA']} />}>
           <Route path="/gestion" element={<Layout />}>
-            <Route
-              index
-              element={
-                <Navigate
-                  to="/gestion/inicio"
-                  replace
-                />
-              }
-            />
+            <Route index element={<Navigate to="/gestion/inicio" replace />} />
 
-            <Route
-              path="inicio"
-              element={<Inicio />}
-            />
+            <Route path="inicio" element={<Inicio />} />
+            <Route path="pacientes" element={<Pacientes />} />
+            <Route path="agenda" element={<Agenda />} />
 
-            <Route
-              path="pacientes"
-              element={<Pacientes />}
-            />
+            {/* Solo odontólogo: datos clínicos */}
+            <Route element={<ProtectedRoute allowedRoles={['ODONTOLOGO']} />}>
+              <Route path="ficha-clinica" element={<FichaClinica />} />
+            </Route>
 
-            <Route
-              path="agenda"
-              element={<Agenda />}
-            />
+            {/* Odontólogo (emite) y recepción (registra pagos) */}
+            <Route element={<ProtectedRoute allowedRoles={['ODONTOLOGO', 'RECEPCIONISTA']} />}>
+              <Route path="presupuestos" element={<Presupuestos />} />
+            </Route>
 
-            <Route
-              path="ficha-clinica"
-              element={<FichaClinica />}
-            />
-
-            <Route
-              path="presupuestos"
-              element={<Presupuestos />}
-            />
+            {/* Solo administrador */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+              <Route path="usuarios" element={<Usuarios />} />
+            </Route>
           </Route>
         </Route>
 
         {/* =========================
             RUTA NO ENCONTRADA
         ========================= */}
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

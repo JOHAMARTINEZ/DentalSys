@@ -1,5 +1,6 @@
 package cl.dentalsys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -46,6 +47,8 @@ public class Paciente {
     @Column(name = "estado", nullable = false)
     private Integer estado = 1;
 
+    // No se envía al frontend: contiene datos de acceso de la cuenta
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;

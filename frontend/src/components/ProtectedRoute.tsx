@@ -1,10 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 
-type Rol =
-  | 'ADMIN'
-  | 'RECEPCIONISTA'
-  | 'ODONTOLOGO'
-  | 'PACIENTE'
+import { cerrarSesion, getRol, getToken } from '../services/api'
+import type { Rol } from '../services/api'
 
 interface ProtectedRouteProps {
   allowedRoles?: Rol[]
@@ -13,11 +10,17 @@ interface ProtectedRouteProps {
 function ProtectedRoute({
   allowedRoles,
 }: ProtectedRouteProps) {
-  const token = localStorage.getItem('dentalsys_token')
-  const rol = localStorage.getItem('dentalsys_rol') as Rol | null
+  const token = getToken()
+  const rol = getRol()
 
   // No está autenticado
   if (!token) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Sesión incompleta (sin rol): se limpia y se vuelve al login
+  if (!rol) {
+    cerrarSesion()
     return <Navigate to="/login" replace />
   }
 
@@ -27,8 +30,8 @@ function ProtectedRoute({
     return <Outlet />
   }
 
-  // El usuario no tiene un rol permitido
-  if (!rol || !allowedRoles.includes(rol)) {
+  // El usuario no tiene un rol permitido: se envía a su inicio
+  if (!allowedRoles.includes(rol)) {
     if (rol === 'PACIENTE') {
       return <Navigate to="/portal" replace />
     }
