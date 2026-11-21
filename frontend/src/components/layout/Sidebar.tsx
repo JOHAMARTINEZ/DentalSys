@@ -18,6 +18,7 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined'
 import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformationOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined'
 
@@ -90,6 +91,12 @@ const MENU: MenuItem[] = [
     path: '/gestion/presupuestos',
     icon: <RequestQuoteOutlinedIcon />,
     roles: ['ODONTOLOGO', 'RECEPCIONISTA'],
+  },
+  {
+    label: 'Pagos',
+    path: '/gestion/pagos',
+    icon: <PaymentsOutlinedIcon />,
+    roles: ['ADMIN', 'RECEPCIONISTA'],
   },
   {
     label: 'Usuarios',

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import Layout from './components/layout/Layout'
+import PortalLayout from './components/layout/PortalLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import Home from './pages/Home'
@@ -14,10 +15,16 @@ import Presupuestos from './pages/Presupuestos'
 import Usuarios from './pages/Usuarios'
 import Horarios from './pages/Horarios'
 import Tratamientos from './pages/Tratamientos'
+import Pagos from './pages/Pagos'
 
 import PortalPaciente from './pages/PortalPaciente'
 import MisCitas from './pages/MisCitas'
 import ReservarCita from './pages/ReservarCita'
+import MisAtenciones from './pages/MisAtenciones'
+import MisPresupuestos from './pages/MisPresupuestos'
+import MisPagos from './pages/MisPagos'
+import MiPerfil from './pages/MiPerfil'
+import Registro from './pages/Registro'
 
 function App() {
   return (
@@ -28,6 +35,7 @@ function App() {
         ========================= */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
 
         {/* Reserva de hora sin iniciar sesión (paciente invitado) */}
         <Route path="/reservar" element={<ReservarCita />} />
@@ -37,8 +45,15 @@ function App() {
             Solo PACIENTE
         ========================= */}
         <Route element={<ProtectedRoute allowedRoles={['PACIENTE']} />}>
-          <Route path="/portal" element={<PortalPaciente />} />
-          <Route path="/portal/citas" element={<MisCitas />} />
+          <Route path="/portal" element={<PortalLayout />}>
+            <Route index element={<PortalPaciente />} />
+            <Route path="citas" element={<MisCitas />} />
+            <Route path="atenciones" element={<MisAtenciones />} />
+            <Route path="presupuestos" element={<MisPresupuestos />} />
+            <Route path="pagos" element={<MisPagos />} />
+            <Route path="perfil" element={<MiPerfil />} />
+          </Route>
+          {/* La reserva tiene su propio encabezado (también se usa sin sesión) */}
           <Route path="/portal/reservar-cita" element={<ReservarCita />} />
         </Route>
 
@@ -70,6 +85,11 @@ function App() {
             {/* Odontólogo (emite) y recepción (registra pagos) */}
             <Route element={<ProtectedRoute allowedRoles={['ODONTOLOGO', 'RECEPCIONISTA']} />}>
               <Route path="presupuestos" element={<Presupuestos />} />
+            </Route>
+
+            {/* Pagos y comprobantes */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'RECEPCIONISTA']} />}>
+              <Route path="pagos" element={<Pagos />} />
             </Route>
 
             {/* Solo administrador */}

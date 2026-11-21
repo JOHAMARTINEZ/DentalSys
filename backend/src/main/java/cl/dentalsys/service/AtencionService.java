@@ -381,7 +381,8 @@ public class AtencionService {
         return odontologo;
     }
 
-    private List<AtencionRequest.TratamientoAplicado> validarTratamientos(
+    /** Validación compartida con PresupuestoService. */
+    public List<AtencionRequest.TratamientoAplicado> validarTratamientos(
             List<AtencionRequest.TratamientoAplicado> tratamientos) {
 
         if (tratamientos == null) {

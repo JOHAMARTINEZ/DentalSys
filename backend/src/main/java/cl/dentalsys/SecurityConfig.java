@@ -111,6 +111,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/health",
                                 "/api/auth/login",
+                                "/api/auth/registro",
                                 "/api/odontologos",
                                 "/api/sucursales",
                                 "/api/motivos-cita",
@@ -128,8 +129,25 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/citas/mis-citas",
                                 "/api/citas/mis-citas/**",
-                                "/api/citas/reservar"
+                                "/api/citas/reservar",
+                                "/api/presupuestos/mis-presupuestos",
+                                "/api/presupuestos/mis-presupuestos/**",
+                                "/api/pagos/mis-pagos",
+                                "/api/pagos/mis-pagos/**",
+                                "/api/portal/**"
                         ).hasRole("PACIENTE")
+
+                        // ===== Pagos y comprobantes: recepción y administración =====
+                        .requestMatchers(
+                                "/api/pagos",
+                                "/api/pagos/**"
+                        ).hasAnyRole("ADMIN", "RECEPCIONISTA")
+
+                        // ===== Presupuestos: solo el odontólogo los crea o edita =====
+                        .requestMatchers(HttpMethod.POST, "/api/presupuestos")
+                        .hasRole("ODONTOLOGO")
+                        .requestMatchers(HttpMethod.PUT, "/api/presupuestos/{id}")
+                        .hasRole("ODONTOLOGO")
 
                         // ===== Administración =====
                         .requestMatchers(
@@ -182,7 +200,9 @@ public class SecurityConfig {
                                 "/api/horarios",
                                 "/api/horarios/**",
                                 "/api/tratamientos",
-                                "/api/tratamientos/**"
+                                "/api/tratamientos/**",
+                                "/api/presupuestos",
+                                "/api/presupuestos/**"
                         ).hasAnyRole(ROLES_GESTION)
 
                         // Cualquier otro endpoint: solo con sesión
