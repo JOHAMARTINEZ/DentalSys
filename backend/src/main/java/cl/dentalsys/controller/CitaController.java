@@ -1,13 +1,14 @@
 package cl.dentalsys.controller;
 
+import cl.dentalsys.dto.ReservaCitaPacienteRequest;
+import cl.dentalsys.dto.ReservaPublicaRequest;
 import cl.dentalsys.model.Cita;
 import cl.dentalsys.service.CitaService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import cl.dentalsys.dto.ReservaPublicaRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -68,18 +69,39 @@ public class CitaController {
         );
     }
 
+    @GetMapping("/mis-citas")
+    public ResponseEntity<List<Cita>> misCitas(
+            Authentication authentication) {
+        return ResponseEntity.ok(
+                citaService.buscarMisCitas(authentication.getName())
+        );
+    }
+
+    @PostMapping("/reservar")
+    public ResponseEntity<Cita> reservarComoPaciente(
+            Authentication authentication,
+            @RequestBody ReservaCitaPacienteRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(citaService.reservarComoPaciente(
+                        authentication.getName(),
+                        request
+                ));
+    }
+
     @PostMapping
     public ResponseEntity<Cita> crearCita(
             @RequestBody Cita cita) {
         return ResponseEntity.status(HttpStatus.CREATED)
-        .body(citaService.guardar(cita));   
+                .body(citaService.guardar(cita));
     }
+
+    // @Valid activa las validaciones definidas en ReservaPublicaRequest
+    // (RUT y nombres obligatorios, correo válido, fecha futura, etc.)
     @PostMapping("/reserva-publica")
     public ResponseEntity<Cita> reservarPublicamente(
-         @RequestBody ReservaPublicaRequest request) {
-
-    return ResponseEntity.status(HttpStatus.CREATED)
-            .body(citaService.reservarPublicamente(request));
+            @Valid @RequestBody ReservaPublicaRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(citaService.reservarPublicamente(request));
     }
 
     @DeleteMapping("/{id}")

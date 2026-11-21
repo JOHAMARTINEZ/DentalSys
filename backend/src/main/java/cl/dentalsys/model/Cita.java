@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "cita")
 public class Cita {
+
+    /** Duración de cada cita en minutos (las citas comienzan en :00 o :30). */
+    public static final int DURACION_MINUTOS = 30;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,8 +30,19 @@ public class Cita {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
+    // Columna obligatoria en dentalsys_v2
+    @Column(name = "fecha_hora_fin", nullable = false)
+    private LocalDateTime fechaHoraFin;
+
+    // Comentario libre del paciente (opcional)
     @Column(name = "motivo", length = 255)
     private String motivo;
+
+    // Tipo de atención elegido de la lista motivo_cita (opcional:
+    // las citas creadas desde la agenda pueden no tenerlo)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_motivo")
+    private MotivoCita motivoCita;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
@@ -48,6 +63,17 @@ public class Cita {
     public Cita() {
     }
 
+    /**
+     * Antes de guardar una cita nueva, si no se indicó la hora de término,
+     * se calcula como hora de inicio + DURACION_MINUTOS.
+     */
+    @PrePersist
+    private void calcularFechaHoraFin() {
+        if (fechaHoraFin == null && fechaHora != null) {
+            fechaHoraFin = fechaHora.plusMinutes(DURACION_MINUTOS);
+        }
+    }
+
     public Integer getIdCita() {
         return idCita;
     }
@@ -64,12 +90,28 @@ public class Cita {
         this.fechaHora = fechaHora;
     }
 
+    public LocalDateTime getFechaHoraFin() {
+        return fechaHoraFin;
+    }
+
+    public void setFechaHoraFin(LocalDateTime fechaHoraFin) {
+        this.fechaHoraFin = fechaHoraFin;
+    }
+
     public String getMotivo() {
         return motivo;
     }
 
     public void setMotivo(String motivo) {
         this.motivo = motivo;
+    }
+
+    public MotivoCita getMotivoCita() {
+        return motivoCita;
+    }
+
+    public void setMotivoCita(MotivoCita motivoCita) {
+        this.motivoCita = motivoCita;
     }
 
     public EstadoCita getEstado() {

@@ -93,6 +93,7 @@ public class SecurityConfig {
                         "/api/auth/login",
                         "/api/odontologos",
                         "/api/sucursales",
+                        "/api/motivos-cita",
                         "/api/citas/reserva-publica",
                         "/error"
                         ).permitAll()

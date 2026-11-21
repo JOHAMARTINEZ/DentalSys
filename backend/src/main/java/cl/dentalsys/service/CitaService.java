@@ -2,13 +2,18 @@ package cl.dentalsys.service;
 import cl.dentalsys.model.EstadoCita;
 
 import cl.dentalsys.model.Cita;
+import cl.dentalsys.model.MotivoCita;
 import cl.dentalsys.model.Odontologo;
 import cl.dentalsys.model.Paciente;
+import cl.dentalsys.model.Usuario;
+import cl.dentalsys.repository.UsuarioRepository;
 import cl.dentalsys.model.Sucursal;
+import cl.dentalsys.repository.MotivoCitaRepository;
 import cl.dentalsys.repository.OdontologoRepository;
 import cl.dentalsys.repository.OdontologoSucursalRepository;
 import cl.dentalsys.repository.PacienteRepository;
 import cl.dentalsys.repository.SucursalRepository;
+import cl.dentalsys.dto.ReservaCitaPacienteRequest;
 import cl.dentalsys.dto.ReservaPublicaRequest;
 import cl.dentalsys.util.RutValidator;
 import cl.dentalsys.repository.CitaRepository;
@@ -29,19 +34,25 @@ public class CitaService {
     private final OdontologoRepository odontologoRepository;
     private final SucursalRepository sucursalRepository;
     private final OdontologoSucursalRepository odontologoSucursalRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final MotivoCitaRepository motivoCitaRepository;
 
    public CitaService(
         CitaRepository citaRepository,
         PacienteRepository pacienteRepository,
+        UsuarioRepository usuarioRepository,
         OdontologoRepository odontologoRepository,
         SucursalRepository sucursalRepository,
-        OdontologoSucursalRepository odontologoSucursalRepository
+        OdontologoSucursalRepository odontologoSucursalRepository,
+        MotivoCitaRepository motivoCitaRepository
 ) {
     this.citaRepository = citaRepository;
     this.pacienteRepository = pacienteRepository;
+    this.usuarioRepository = usuarioRepository;
     this.odontologoRepository = odontologoRepository;
     this.sucursalRepository = sucursalRepository;
     this.odontologoSucursalRepository = odontologoSucursalRepository;
+    this.motivoCitaRepository = motivoCitaRepository;
 }
 
     public List<Cita> listarCitas() {
@@ -57,9 +68,29 @@ public class CitaService {
             LocalDateTime fin) {
         return citaRepository.findByFechaHoraBetween(inicio, fin);
     }
-
     public List<Cita> buscarPorPaciente(Integer idPaciente) {
-        return citaRepository.findByPacienteIdPaciente(idPaciente);
+    return citaRepository.findByPacienteIdPaciente(idPaciente);
+    }
+
+    public List<Cita> buscarMisCitas(String username) {
+
+    Usuario usuario = usuarioRepository
+            .findByUsername(username)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Usuario autenticado no encontrado"
+            ));
+
+    Paciente paciente = pacienteRepository
+            .findByUsuarioIdUsuario(usuario.getIdUsuario())
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Paciente asociado al usuario no encontrado"
+            ));
+
+    return citaRepository.findByPacienteIdPaciente(
+            paciente.getIdPaciente()
+    );
     }
 
     public List<Cita> buscarPorOdontologo(Integer idUsuario) {
@@ -135,7 +166,164 @@ public class CitaService {
     }
 
     return citaRepository.save(cita);
-}
+   }
+    
+    public Cita reservarComoPaciente(
+        String username,
+        ReservaCitaPacienteRequest request) {
+
+    Usuario usuario = usuarioRepository
+            .findByUsername(username)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Usuario autenticado no encontrado"
+            ));
+    
+    Paciente paciente = pacienteRepository
+            .findByUsuarioIdUsuario(usuario.getIdUsuario())
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Paciente asociado al usuario no encontrado"
+            ));
+
+    if (paciente.getEstado() == null || paciente.getEstado() != 1) {
+        throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "El paciente se encuentra desactivado"
+        );
+    }
+
+    if (request.idOdontologo() == null) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "El odontólogo es obligatorio"
+        );
+    }
+
+    if (request.idSucursal() == null) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "La sucursal es obligatoria"
+        );
+    }
+
+    if (request.fechaHora() == null) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "La fecha y hora son obligatorias"
+        );
+    }
+
+    Odontologo odontologo = odontologoRepository
+            .findById(request.idOdontologo())
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El odontólogo seleccionado no existe"
+            ));
+
+    if (odontologo.getUsuario() == null
+            || odontologo.getUsuario().getEstado() == null
+            || odontologo.getUsuario().getEstado() != 1) {
+
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "El odontólogo seleccionado no está disponible"
+        );
+    }
+
+    Sucursal sucursal = sucursalRepository
+            .findById(request.idSucursal())
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "La sucursal seleccionada no existe"
+            ));
+
+    if (!Boolean.TRUE.equals(sucursal.getEstado())) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "La sucursal seleccionada no está disponible"
+        );
+    }
+
+    boolean atiendeEnSucursal =
+            odontologoSucursalRepository
+                    .existsByIdUsuarioAndIdSucursal(
+                            request.idOdontologo(),
+                            request.idSucursal()
+                    );
+
+    if (!atiendeEnSucursal) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "El odontólogo seleccionado no atiende en esa sucursal"
+        );
+    }
+
+    // Tipo de atención (opcional)
+    MotivoCita motivoCita = buscarMotivoActivo(request.idMotivo());
+
+    LocalDateTime fechaHora = request.fechaHora();
+
+    if (!fechaHora.isAfter(LocalDateTime.now())) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "La fecha de la cita debe ser futura"
+        );
+    }
+
+    if (fechaHora.getMinute() != 0
+            && fechaHora.getMinute() != 30) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Las citas deben comenzar en horas completas o medias horas"
+        );
+    }
+
+    if (fechaHora.getSecond() != 0
+            || fechaHora.getNano() != 0) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "El horario de la cita no es válido"
+        );
+    }
+
+    List<EstadoCita> estadosActivos = List.of(
+            EstadoCita.RESERVADA,
+            EstadoCita.CONFIRMADA
+    );
+
+    boolean horarioOcupado =
+            citaRepository
+                    .existsByOdontologoIdUsuarioAndFechaHoraAndEstadoIn(
+                            request.idOdontologo(),
+                            fechaHora,
+                            estadosActivos
+                    );
+
+    if (horarioOcupado) {
+        throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "El odontólogo ya tiene una cita en ese horario"
+        );
+    }
+
+    Cita cita = new Cita();
+
+    cita.setPaciente(paciente);
+    cita.setOdontologo(odontologo);
+    cita.setSucursal(sucursal);
+    cita.setMotivoCita(motivoCita);
+    cita.setFechaHora(fechaHora);
+    cita.setMotivo(
+            request.motivo() == null
+                    ? null
+                    : request.motivo().trim()
+    );
+    cita.setEstado(EstadoCita.RESERVADA);
+
+    return citaRepository.save(cita);
+    }
+
 
     public Optional<Cita> eliminar(Integer id) {
         return citaRepository.findById(id)
@@ -231,6 +419,9 @@ public class CitaService {
         );
     }
 
+    // Tipo de atención (opcional)
+    MotivoCita motivoCita = buscarMotivoActivo(request.idMotivo());
+
     LocalDateTime fechaHora = request.fechaHora();
 
     if (!fechaHora.isAfter(LocalDateTime.now())) {
@@ -280,6 +471,7 @@ public class CitaService {
     cita.setPaciente(paciente);
     cita.setOdontologo(odontologo);
     cita.setSucursal(sucursal);
+    cita.setMotivoCita(motivoCita);
     cita.setFechaHora(fechaHora);
     cita.setMotivo(
             request.motivo() == null
@@ -289,8 +481,33 @@ public class CitaService {
     cita.setEstado(EstadoCita.RESERVADA);
 
     return citaRepository.save(cita);
-}
+    }
 
+    /**
+     * Busca el tipo de atención elegido. Si no se eligió ninguno, devuelve null
+     * (el motivo es opcional). Si se eligió uno, debe existir y estar activo.
+     */
+    private MotivoCita buscarMotivoActivo(Integer idMotivo) {
 
+        if (idMotivo == null) {
+            return null;
+        }
+
+        MotivoCita motivoCita = motivoCitaRepository
+                .findById(idMotivo)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "El tipo de atención seleccionado no existe"
+                ));
+
+        if (!Boolean.TRUE.equals(motivoCita.getEstado())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El tipo de atención seleccionado no está disponible"
+            );
+        }
+
+        return motivoCita;
+    }
 
 }

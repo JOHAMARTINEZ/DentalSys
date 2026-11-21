@@ -38,6 +38,9 @@ public record ReservaPublicaRequest(
         @NotNull
         Integer idSucursal,
 
+        // Tipo de atención (tabla motivo_cita). Opcional.
+        Integer idMotivo,
+
         @NotNull
         @Future
         LocalDateTime fechaHora,
