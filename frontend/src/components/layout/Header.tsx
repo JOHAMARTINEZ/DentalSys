@@ -30,6 +30,7 @@ const TITULOS: Record<string, { titulo: string; subtitulo: string }> = {
   '/gestion/inicio': { titulo: 'Inicio', subtitulo: 'Resumen del día en la clínica' },
   '/gestion/pacientes': { titulo: 'Pacientes', subtitulo: 'Registro y datos de contacto' },
   '/gestion/agenda': { titulo: 'Agenda', subtitulo: 'Citas por día, odontólogo y sucursal' },
+  '/gestion/horarios': { titulo: 'Horarios', subtitulo: 'Horario semanal y bloqueos de agenda' },
   '/gestion/ficha-clinica': { titulo: 'Ficha clínica', subtitulo: 'Antecedentes y atenciones' },
   '/gestion/presupuestos': { titulo: 'Presupuestos', subtitulo: 'Tratamientos, abonos y saldos' },
   '/gestion/usuarios': { titulo: 'Usuarios', subtitulo: 'Cuentas del personal y permisos' },

@@ -114,6 +114,7 @@ public class SecurityConfig {
                                 "/api/odontologos",
                                 "/api/sucursales",
                                 "/api/motivos-cita",
+                                "/api/citas/disponibilidad",
                                 "/api/citas/reserva-publica",
                                 "/error"
                         ).permitAll()
@@ -126,6 +127,7 @@ public class SecurityConfig {
                         // ===== Portal del paciente =====
                         .requestMatchers(
                                 "/api/citas/mis-citas",
+                                "/api/citas/mis-citas/**",
                                 "/api/citas/reservar"
                         ).hasRole("PACIENTE")
 
@@ -135,13 +137,37 @@ public class SecurityConfig {
                                 "/api/usuarios/**"
                         ).hasRole("ADMIN")
 
-                        // ===== Gestión de la clínica =====
+                        // ===== Solo recepción y administración modifican =====
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/pacientes",
+                                "/api/pacientes/**",
+                                "/api/citas",
+                                "/api/horarios",
+                                "/api/horarios/**"
+                        ).hasAnyRole("ADMIN", "RECEPCIONISTA")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/pacientes/**",
+                                "/api/citas/*/reprogramar",
+                                "/api/horarios/**"
+                        ).hasAnyRole("ADMIN", "RECEPCIONISTA")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/horarios/**"
+                        ).hasAnyRole("ADMIN", "RECEPCIONISTA")
+
+                        // ===== Gestión de la clínica (lectura y estados) =====
                         .requestMatchers(
                                 "/api/dashboard/**",
                                 "/api/pacientes",
                                 "/api/pacientes/**",
                                 "/api/citas",
-                                "/api/citas/**"
+                                "/api/citas/**",
+                                "/api/horarios",
+                                "/api/horarios/**"
                         ).hasAnyRole(ROLES_GESTION)
 
                         // Cualquier otro endpoint: solo con sesión

@@ -15,11 +15,15 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
+/**
+ * Cita de la agenda (tabla cita de dentalsys_v2).
+ * No se envía directamente al frontend: se usa CitaResponse.
+ */
 @Entity
 @Table(name = "cita")
 public class Cita {
 
-    /** Duración de cada cita en minutos (las citas comienzan en :00 o :30). */
+    /** Duración por defecto si el tipo de atención no indica otra. */
     public static final int DURACION_MINUTOS = 30;
 
     @Id
@@ -30,16 +34,14 @@ public class Cita {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
-    // Columna obligatoria en dentalsys_v2
     @Column(name = "fecha_hora_fin", nullable = false)
     private LocalDateTime fechaHoraFin;
 
-    // Comentario libre del paciente (opcional)
+    // Comentario libre (opcional)
     @Column(name = "motivo", length = 255)
     private String motivo;
 
-    // Tipo de atención elegido de la lista motivo_cita (opcional:
-    // las citas creadas desde la agenda pueden no tenerlo)
+    // Tipo de atención (tabla motivo_cita, opcional)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_motivo")
     private MotivoCita motivoCita;
@@ -60,13 +62,18 @@ public class Cita {
     @JoinColumn(name = "id_sucursal", nullable = false)
     private Sucursal sucursal;
 
+    // Usuario que creó la cita (null = reserva online sin cuenta)
+    @Column(name = "id_usuario_creador")
+    private Integer idUsuarioCreador;
+
+    // La pone la base de datos
+    @Column(name = "fecha_creacion", insertable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
+
     public Cita() {
     }
 
-    /**
-     * Antes de guardar una cita nueva, si no se indicó la hora de término,
-     * se calcula como hora de inicio + DURACION_MINUTOS.
-     */
+    /** Respaldo: si no se calculó la hora de término, se usa la duración por defecto. */
     @PrePersist
     private void calcularFechaHoraFin() {
         if (fechaHoraFin == null && fechaHora != null) {
@@ -144,5 +151,17 @@ public class Cita {
 
     public void setSucursal(Sucursal sucursal) {
         this.sucursal = sucursal;
+    }
+
+    public Integer getIdUsuarioCreador() {
+        return idUsuarioCreador;
+    }
+
+    public void setIdUsuarioCreador(Integer idUsuarioCreador) {
+        this.idUsuarioCreador = idUsuarioCreador;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
 }

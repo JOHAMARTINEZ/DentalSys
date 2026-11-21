@@ -12,6 +12,7 @@ import Agenda from './pages/Agenda'
 import FichaClinica from './pages/FichaClinica'
 import Presupuestos from './pages/Presupuestos'
 import Usuarios from './pages/Usuarios'
+import Horarios from './pages/Horarios'
 
 import PortalPaciente from './pages/PortalPaciente'
 import MisCitas from './pages/MisCitas'
@@ -53,6 +54,7 @@ function App() {
             <Route path="inicio" element={<Inicio />} />
             <Route path="pacientes" element={<Pacientes />} />
             <Route path="agenda" element={<Agenda />} />
+            <Route path="horarios" element={<Horarios />} />
 
             {/* Solo odontólogo: datos clínicos */}
             <Route element={<ProtectedRoute allowedRoles={['ODONTOLOGO']} />}>

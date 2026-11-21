@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import '@fontsource-variable/plus-jakarta-sans'
 
 import {
-  Alert, Box, Button, Card, Container, Grid, MenuItem, Stack, TextField, Typography,
+  Alert, Box, Button, Card, Chip, Container, Grid, MenuItem, Skeleton, Stack, TextField, Typography,
 } from '@mui/material'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
@@ -77,6 +77,7 @@ type Odontologo = {
   nombres: string
   apellidos: string
   especialidad?: string
+  sucursales: number[]
 }
 
 type Sucursal = {
@@ -88,6 +89,23 @@ type Sucursal = {
 type MotivoCita = {
   idMotivo: number
   nombre: string
+  duracionMinutos?: number
+}
+
+// Respuesta de GET /api/citas/disponibilidad
+type Disponibilidad = {
+  horarioConfigurado: boolean
+  duracionMinutos: number
+  bloques: { hora: string; disponible: boolean }[]
+}
+
+// Cita creada (respuesta del backend)
+type CitaCreada = {
+  fechaHora: string
+  tipoAtencion: string | null
+  odontologoNombre: string
+  sucursalNombre: string
+  sucursalDireccion: string
 }
 
 type FormularioCita = {
@@ -112,6 +130,7 @@ type Resumen = {
   fecha: string
   hora: string
   sucursal: string
+  direccion: string
   odontologo: string
 }
 
@@ -206,29 +225,44 @@ function ReservarCita() {
 
   const manejarCambio = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target
-    setFormulario((actual) => ({ ...actual, [name]: value }))
+    setFormulario((actual) => {
+      const nuevo = { ...actual, [name]: value }
+      // Al cambiar la sucursal se elige de nuevo el odontólogo; y si cambia
+      // algo que afecta las horas disponibles, se vuelve a elegir la hora.
+      if (name === 'idSucursal') {
+        nuevo.idOdontologo = ''
+        nuevo.hora = ''
+      }
+      if (name === 'idOdontologo' || name === 'fecha' || name === 'idMotivo') {
+        nuevo.hora = ''
+      }
+      return nuevo
+    })
   }
+
+  // Solo odontólogos que atienden en la sucursal elegida
+  const odontologosSucursal = odontologos.filter(
+    (o) => !formulario.idSucursal || o.sucursales.includes(Number(formulario.idSucursal)),
+  )
 
   const reservarCita = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
 
     if (!formulario.idMotivo || !formulario.idOdontologo || !formulario.idSucursal
-      || !formulario.fecha || !formulario.hora) {
+      || !formulario.fecha) {
       setError('Completa todos los campos obligatorios.')
+      return
+    }
+
+    if (!formulario.hora) {
+      setError('Elige una de las horas disponibles.')
       return
     }
 
     if (!conSesion && (!formulario.rut.trim() || !formulario.nombres.trim()
       || !formulario.apellidos.trim() || !formulario.fechaNacimiento)) {
       setError('Completa tus datos personales.')
-      return
-    }
-
-    // El backend solo acepta citas que comienzan en :00 o :30
-    const minutos = formulario.hora.split(':')[1]
-    if (minutos !== '00' && minutos !== '30') {
-      setError('La hora debe comenzar en punto o y media (por ejemplo 10:00 o 10:30).')
       return
     }
 
@@ -281,17 +315,17 @@ function ReservarCita() {
         return
       }
 
-      // Resumen con los datos que eligió el paciente
-      const motivo = motivos.find((m) => String(m.idMotivo) === formulario.idMotivo)
-      const odontologo = odontologos.find((o) => String(o.idUsuario) === formulario.idOdontologo)
-      const sucursal = sucursales.find((s) => String(s.idSucursal) === formulario.idSucursal)
+      // Resumen con los datos que confirmó el backend
+      const cita = (await respuesta.json()) as CitaCreada
+      const inicio = new Date(cita.fechaHora)
 
       setResumen({
-        tipoAtencion: motivo ? motivo.nombre : '',
-        fecha: formulario.fecha.split('-').reverse().join('-'),
-        hora: formulario.hora,
-        sucursal: sucursal ? sucursal.nombre : '',
-        odontologo: odontologo ? `${odontologo.nombres} ${odontologo.apellidos}` : '',
+        tipoAtencion: cita.tipoAtencion || 'Atención dental',
+        fecha: inicio.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+        hora: inicio.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }),
+        sucursal: cita.sucursalNombre,
+        direccion: cita.sucursalDireccion,
+        odontologo: cita.odontologoNombre,
       })
       setFormulario(FORMULARIO_VACIO)
     } catch (e) {
@@ -350,7 +384,7 @@ function ReservarCita() {
               Reserva tu hora
             </Typography>
             <Typography sx={{ mt: 1.5, color: 'rgba(255,255,255,.72)', fontSize: '1.05rem', maxWidth: 560 }}>
-              Selecciona el tipo de atención, odontólogo, sucursal, fecha y hora para solicitar una nueva atención.
+              Elige el tipo de atención, la sucursal y el odontólogo. Te mostraremos solo las horas que están libres.
             </Typography>
           </Container>
         </Box>
@@ -444,20 +478,6 @@ function ReservarCita() {
                         </TextField>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField select fullWidth required label="Odontólogo" name="idOdontologo"
-                          value={formulario.idOdontologo} onChange={manejarCambio} disabled={bloqueado}>
-                          {odontologos.length === 0 ? (
-                            <MenuItem disabled value="">No hay odontólogos disponibles</MenuItem>
-                          ) : (
-                            odontologos.map((o) => (
-                              <MenuItem key={o.idUsuario} value={String(o.idUsuario)}>
-                                {o.nombres} {o.apellidos}{o.especialidad ? ` - ${o.especialidad}` : ''}
-                              </MenuItem>
-                            ))
-                          )}
-                        </TextField>
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField select fullWidth required label="Sucursal" name="idSucursal"
                           value={formulario.idSucursal} onChange={manejarCambio} disabled={bloqueado}>
                           {sucursales.length === 0 ? (
@@ -472,15 +492,36 @@ function ReservarCita() {
                         </TextField>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField select fullWidth required label="Odontólogo" name="idOdontologo"
+                          value={formulario.idOdontologo} onChange={manejarCambio}
+                          disabled={bloqueado || !formulario.idSucursal}
+                          helperText={!formulario.idSucursal ? 'Primero elige la sucursal' : ' '}>
+                          {odontologosSucursal.length === 0 ? (
+                            <MenuItem disabled value="">No hay odontólogos en esta sucursal</MenuItem>
+                          ) : (
+                            odontologosSucursal.map((o) => (
+                              <MenuItem key={o.idUsuario} value={String(o.idUsuario)}>
+                                {o.nombres} {o.apellidos}{o.especialidad ? ` - ${o.especialidad}` : ''}
+                              </MenuItem>
+                            ))
+                          )}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField fullWidth required label="Fecha" name="fecha" type="date"
                           value={formulario.fecha} onChange={manejarCambio} disabled={guardando}
                           slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: hoyISO() } }} />
                       </Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField fullWidth required label="Hora" name="hora" type="time"
-                          helperText="Las horas comienzan en punto o y media"
-                          value={formulario.hora} onChange={manejarCambio} disabled={guardando}
-                          slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1800 } }} />
+                      <Grid size={{ xs: 12 }}>
+                        <Typography sx={{ fontWeight: 700, mb: 1.25 }}>Hora *</Typography>
+                        <SelectorHora
+                          idOdontologo={formulario.idOdontologo}
+                          idSucursal={formulario.idSucursal}
+                          fecha={formulario.fecha}
+                          idMotivo={formulario.idMotivo}
+                          valor={formulario.hora}
+                          onChange={(hora) => setFormulario((actual) => ({ ...actual, hora }))}
+                        />
                       </Grid>
                       <Grid size={{ xs: 12 }}>
                         <TextField fullWidth multiline minRows={3} label="Comentario adicional (opcional)" name="motivo"
@@ -551,7 +592,101 @@ function Bloque({ numero, titulo, children }: { numero: number; titulo: string; 
   )
 }
 
-/** Mensaje de reserva exitosa con los datos que eligió el paciente. */
+/** Horas del día según el horario real del odontólogo (GET /api/citas/disponibilidad). */
+function SelectorHora({
+  idOdontologo, idSucursal, fecha, idMotivo, valor, onChange,
+}: {
+  idOdontologo: string
+  idSucursal: string
+  fecha: string
+  idMotivo: string
+  valor: string
+  onChange: (hora: string) => void
+}) {
+  const [datos, setDatos] = useState<Disponibilidad | null>(null)
+  const [cargando, setCargando] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!idOdontologo || !idSucursal || !fecha) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDatos(null)
+      return
+    }
+
+    let activo = true
+    setCargando(true)
+    setError('')
+    const motivo = idMotivo ? `&idMotivo=${idMotivo}` : ''
+
+    fetch(`${API_URL}/api/citas/disponibilidad?idOdontologo=${idOdontologo}&idSucursal=${idSucursal}&fecha=${fecha}${motivo}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(await leerMensajeError(r, 'No fue posible cargar las horas.'))
+        return r.json() as Promise<Disponibilidad>
+      })
+      .then((d) => { if (activo) setDatos(d) })
+      .catch((e: Error) => { if (activo) setError(e.message || 'No fue posible cargar las horas.') })
+      .finally(() => { if (activo) setCargando(false) })
+
+    return () => { activo = false }
+  }, [idOdontologo, idSucursal, fecha, idMotivo])
+
+  if (!idOdontologo || !idSucursal || !fecha) {
+    return (
+      <Typography color="text.secondary" sx={{ fontSize: '.95rem' }}>
+        Elige sucursal, odontólogo y fecha para ver las horas disponibles.
+      </Typography>
+    )
+  }
+
+  if (cargando) return <Skeleton variant="rounded" height={80} sx={{ borderRadius: 3 }} />
+  if (error) return <Alert severity="error" sx={{ borderRadius: 3 }}>{error}</Alert>
+  if (!datos) return null
+
+  if (!datos.horarioConfigurado) {
+    return (
+      <Alert severity="info" sx={{ borderRadius: 3 }}>
+        El odontólogo no atiende ese día en esta sucursal. Prueba con otra fecha.
+      </Alert>
+    )
+  }
+
+  const libres = datos.bloques.filter((b) => b.disponible)
+
+  if (libres.length === 0) {
+    return <Alert severity="warning" sx={{ borderRadius: 3 }}>No quedan horas disponibles ese día. Prueba con otra fecha.</Alert>
+  }
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        {libres.map((b) => {
+          const elegida = valor === b.hora
+          return (
+            <Chip
+              key={b.hora}
+              label={b.hora}
+              clickable
+              onClick={() => onChange(b.hora)}
+              sx={{
+                minWidth: 76, height: 40, fontWeight: 700, fontSize: '.95rem', borderRadius: 999,
+                color: elegida ? '#fff' : 'text.primary',
+                background: elegida ? GRADIENT : '#fff',
+                border: `1px solid ${elegida ? 'transparent' : C.line}`,
+                '&:hover': { borderColor: C.blue },
+              }}
+            />
+          )
+        })}
+      </Box>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25 }}>
+        {libres.length} horas disponibles · duración aproximada {datos.duracionMinutos} minutos
+      </Typography>
+    </Box>
+  )
+}
+
+/** Mensaje de reserva exitosa con los datos que confirmó el backend. */
 function ReservaExitosa({
   resumen, conSesion, onOtraReserva, onIr,
 }: {
@@ -565,6 +700,7 @@ function ReservaExitosa({
     ['Fecha', resumen.fecha],
     ['Hora', resumen.hora],
     ['Sucursal', resumen.sucursal],
+    ['Dirección', resumen.direccion],
     ['Odontólogo', resumen.odontologo],
   ]
 

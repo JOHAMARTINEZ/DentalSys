@@ -191,7 +191,7 @@ const ESTADO_CITA: Record<string, { label: string; color: 'default' | 'primary' 
 }
 
 function hora(fecha: string): string {
-  return new Date(fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+  return new Date(fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 }
 
 function saludo(): string {

@@ -13,6 +13,7 @@ import { useMediaQuery, useTheme } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined'
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
@@ -63,6 +64,12 @@ const MENU: MenuItem[] = [
     label: 'Agenda',
     path: '/gestion/agenda',
     icon: <CalendarMonthOutlinedIcon />,
+    roles: ['ADMIN', 'RECEPCIONISTA', 'ODONTOLOGO'],
+  },
+  {
+    label: 'Horarios',
+    path: '/gestion/horarios',
+    icon: <ScheduleOutlinedIcon />,
     roles: ['ADMIN', 'RECEPCIONISTA', 'ODONTOLOGO'],
   },
   {
