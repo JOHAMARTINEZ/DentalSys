@@ -13,6 +13,7 @@ import FichaClinica from './pages/FichaClinica'
 import Presupuestos from './pages/Presupuestos'
 import Usuarios from './pages/Usuarios'
 import Horarios from './pages/Horarios'
+import Tratamientos from './pages/Tratamientos'
 
 import PortalPaciente from './pages/PortalPaciente'
 import MisCitas from './pages/MisCitas'
@@ -59,6 +60,11 @@ function App() {
             {/* Solo odontólogo: datos clínicos */}
             <Route element={<ProtectedRoute allowedRoles={['ODONTOLOGO']} />}>
               <Route path="ficha-clinica" element={<FichaClinica />} />
+            </Route>
+
+            {/* Catálogo de tratamientos */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ODONTOLOGO']} />}>
+              <Route path="tratamientos" element={<Tratamientos />} />
             </Route>
 
             {/* Odontólogo (emite) y recepción (registra pagos) */}

@@ -16,6 +16,7 @@ import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined'
+import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformationOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined'
@@ -77,6 +78,12 @@ const MENU: MenuItem[] = [
     path: '/gestion/ficha-clinica',
     icon: <DescriptionOutlinedIcon />,
     roles: ['ODONTOLOGO'],
+  },
+  {
+    label: 'Tratamientos',
+    path: '/gestion/tratamientos',
+    icon: <MedicalInformationOutlinedIcon />,
+    roles: ['ADMIN', 'ODONTOLOGO'],
   },
   {
     label: 'Presupuestos',

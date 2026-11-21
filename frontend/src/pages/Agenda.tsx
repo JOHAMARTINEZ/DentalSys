@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import Alert from '@mui/material/Alert'
 import Autocomplete from '@mui/material/Autocomplete'
@@ -42,6 +42,7 @@ import PersonOffOutlinedIcon from '@mui/icons-material/PersonOffOutlined'
 import EventRepeatOutlinedIcon from '@mui/icons-material/EventRepeatOutlined'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 
 import { apiGet, apiPost, apiPut, getRol, mensajeError } from '../services/api'
 
@@ -81,6 +82,8 @@ interface Cita {
   sucursalDireccion: string
   fechaCreacion: string | null
   creadaPor: string | null
+  idAtencion: number | null
+  estadoAtencion: 'BORRADOR' | 'CERRADA' | null
 }
 
 interface Historial {
@@ -317,6 +320,7 @@ function Agenda() {
   const esOdontologo = rol === 'ODONTOLOGO'
   const gestiona = rol === 'ADMIN' || rol === 'RECEPCIONISTA'
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
 
   const [vista, setVista] = useState<'dia' | 'semana'>('dia')
   const [fecha, setFecha] = useState(aISO(new Date()))
@@ -737,6 +741,23 @@ function Agenda() {
                 </Stack>
               )}
             </DialogContent>
+            {esOdontologo && detalle.estado !== 'CANCELADA' && detalle.estado !== 'NO_ASISTIO' && (
+              <Box sx={{ px: 3, pt: 2 }}>
+                <Button
+                  fullWidth
+                  variant={detalle.idAtencion ? 'outlined' : 'contained'}
+                  startIcon={<DescriptionOutlinedIcon />}
+                  onClick={() => navigate(detalle.idAtencion
+                    ? `/gestion/ficha-clinica?idPaciente=${detalle.idPaciente}`
+                    : `/gestion/ficha-clinica?idPaciente=${detalle.idPaciente}&idCita=${detalle.idCita}`)}
+                  sx={detalle.idAtencion ? undefined : { background: GRADIENT }}
+                >
+                  {detalle.idAtencion
+                    ? `Ver ficha (atención ${detalle.estadoAtencion === 'CERRADA' ? 'cerrada' : 'en borrador'})`
+                    : 'Registrar atención clínica'}
+                </Button>
+              </Box>
+            )}
             {abierta(detalle) && (
               <DialogActions sx={{ px: 3, py: 2, flexWrap: 'wrap', gap: 1 }}>
                 {gestiona && (

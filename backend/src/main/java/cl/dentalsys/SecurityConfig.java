@@ -137,6 +137,19 @@ public class SecurityConfig {
                                 "/api/usuarios/**"
                         ).hasRole("ADMIN")
 
+                        // ===== Datos clínicos: solo odontólogo =====
+                        .requestMatchers(
+                                "/api/fichas/**",
+                                "/api/atenciones",
+                                "/api/atenciones/**"
+                        ).hasRole("ODONTOLOGO")
+
+                        // ===== Catálogo de tratamientos: editan ADMIN y ODONTOLOGO =====
+                        .requestMatchers(HttpMethod.POST, "/api/tratamientos")
+                        .hasAnyRole("ADMIN", "ODONTOLOGO")
+                        .requestMatchers(HttpMethod.PUT, "/api/tratamientos/**")
+                        .hasAnyRole("ADMIN", "ODONTOLOGO")
+
                         // ===== Solo recepción y administración modifican =====
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -167,7 +180,9 @@ public class SecurityConfig {
                                 "/api/citas",
                                 "/api/citas/**",
                                 "/api/horarios",
-                                "/api/horarios/**"
+                                "/api/horarios/**",
+                                "/api/tratamientos",
+                                "/api/tratamientos/**"
                         ).hasAnyRole(ROLES_GESTION)
 
                         // Cualquier otro endpoint: solo con sesión

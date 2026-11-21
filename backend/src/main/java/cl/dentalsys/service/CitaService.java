@@ -78,7 +78,8 @@ public class CitaService {
                    o.especialidad,
                    c.id_sucursal, s.nombre AS s_nombre, s.direccion AS s_direccion,
                    c.fecha_creacion,
-                   uc.nombres AS c_nombres, uc.apellidos AS c_apellidos, uc.rol AS c_rol
+                   uc.nombres AS c_nombres, uc.apellidos AS c_apellidos, uc.rol AS c_rol,
+                   ate.id_atencion, ate.estado AS estado_atencion
             FROM cita c
             JOIN paciente p ON p.id_paciente = c.id_paciente
             JOIN odontologo o ON o.id_usuario = c.id_odontologo
@@ -86,6 +87,7 @@ public class CitaService {
             JOIN sucursal s ON s.id_sucursal = c.id_sucursal
             LEFT JOIN motivo_cita m ON m.id_motivo = c.id_motivo
             LEFT JOIN usuario uc ON uc.id_usuario = c.id_usuario_creador
+            LEFT JOIN atencion ate ON ate.id_cita = c.id_cita
             """;
 
     private static final RowMapper<CitaResponse> MAPEO_CITA = (rs, fila) -> {
@@ -102,6 +104,9 @@ public class CitaService {
 
         int idMotivo = rs.getInt("id_motivo");
         Integer idMotivoNullable = rs.wasNull() ? null : idMotivo;
+
+        int idAtencion = rs.getInt("id_atencion");
+        Integer idAtencionNullable = rs.wasNull() ? null : idAtencion;
 
         return new CitaResponse(
                 rs.getInt("id_cita"),
@@ -123,7 +128,9 @@ public class CitaService {
                 rs.getString("s_nombre"),
                 rs.getString("s_direccion"),
                 creacion == null ? null : creacion.toLocalDateTime(),
-                creadaPor
+                creadaPor,
+                idAtencionNullable,
+                rs.getString("estado_atencion")
         );
     };
 
