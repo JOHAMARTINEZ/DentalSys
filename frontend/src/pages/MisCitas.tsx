@@ -22,7 +22,9 @@ type Cita = {
   fechaHora: string
   motivo?: string
   estado: string
-  idOdontologo: number
+  odontologo?: {
+    idUsuario: number
+  }
   correoOdontologo?: string
 }
 
@@ -158,30 +160,34 @@ function MisCitas() {
   }
 
   const obtenerNombreOdontologo = (cita: Cita) => {
-    const odontologo = odontologos.find(
-      (item) => item.idUsuario === cita.idOdontologo,
-    )
+  const idOdontologo = cita.odontologo?.idUsuario
 
-    if (odontologo) {
-      const nombre = [
-        odontologo.nombres,
-        odontologo.apellidos,
-      ]
-        .filter(Boolean)
-        .join(' ')
+  const odontologo = odontologos.find(
+    (item) => item.idUsuario === idOdontologo,
+  )
 
-      if (nombre) {
-        return odontologo.especialidad
-          ? `${nombre} — ${odontologo.especialidad}`
-          : nombre
-      }
+  if (odontologo) {
+    const nombre = [
+      odontologo.nombres,
+      odontologo.apellidos,
+    ]
+      .filter(Boolean)
+      .join(' ')
+
+    if (nombre) {
+      return odontologo.especialidad
+        ? `${nombre} — ${odontologo.especialidad}`
+        : nombre
     }
-
-    return (
-      cita.correoOdontologo ||
-      `Odontólogo #${cita.idOdontologo}`
-    )
   }
+
+  return (
+    cita.correoOdontologo ||
+    (idOdontologo
+      ? `Odontólogo #${idOdontologo}`
+      : 'Profesional no disponible')
+  )
+}
 
   const citasOrdenadas = [...citas].sort(
     (a, b) =>
@@ -410,7 +416,7 @@ function MisCitas() {
                 >
                   <CardContent
                     sx={{
-                      p: 3,
+                      p: 3, 
                       '&:last-child': {
                         pb: 3,
                       },
