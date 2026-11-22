@@ -193,6 +193,7 @@ public class SecurityConfig {
                         // ===== Gestión de la clínica (lectura y estados) =====
                         .requestMatchers(
                                 "/api/dashboard/**",
+                                "/api/asistente/**",
                                 "/api/pacientes",
                                 "/api/pacientes/**",
                                 "/api/citas",

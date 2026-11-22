@@ -7,6 +7,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 import Sidebar from './Sidebar'
 import Header from './Header'
+import AsistenteIA from '../AsistenteIA'
 
 /* =========================================================
    TEMA DEL PORTAL DE GESTIÓN
@@ -117,6 +118,9 @@ function Layout() {
             <Outlet />
           </Box>
         </Box>
+
+        {/* Asistente de IA (botón flotante, solo personal) */}
+        <AsistenteIA />
       </Box>
     </ThemeProvider>
   )
