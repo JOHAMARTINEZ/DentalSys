@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -46,9 +46,15 @@ import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import CakeOutlinedIcon from '@mui/icons-material/CakeOutlined'
 import FamilyRestroomOutlinedIcon from '@mui/icons-material/FamilyRestroomOutlined'
+import ChildCareOutlinedIcon from '@mui/icons-material/ChildCareOutlined'
+import PhonelinkRingOutlinedIcon from '@mui/icons-material/PhonelinkRingOutlined'
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined'
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 
 import { apiGet, apiPost, apiPut, getRol, mensajeError } from '../services/api'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
+import Indicador from '../components/ui/Indicador'
 
 /* =========================================================
    PACIENTES
@@ -59,7 +65,8 @@ import { apiGet, apiPost, apiPut, getRol, mensajeError } from '../services/api'
    Endpoints: /api/pacientes y /api/citas?idPaciente=
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 
 interface Paciente {
   idPaciente: number
@@ -228,6 +235,7 @@ function Pacientes() {
   const navigate = useNavigate()
   const rol = getRol()
   const puedeEditar = rol === 'ADMIN' || rol === 'RECEPCIONISTA'
+  const esOdontologo = rol === 'ODONTOLOGO'
 
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [cargando, setCargando] = useState(true)
@@ -241,6 +249,8 @@ function Pacientes() {
   const [detalle, setDetalle] = useState<Paciente | null>(null)
   const [citas, setCitas] = useState<CitaPaciente[]>([])
   const [cargandoCitas, setCargandoCitas] = useState(false)
+  // Evita mostrar citas de otro paciente si se cambia de ficha rápido
+  const fichaActual = useRef<number | null>(null)
 
   // Formulario
   const [dialogo, setDialogo] = useState(false)
@@ -302,15 +312,17 @@ function Pacientes() {
   /* ---------- Ficha ---------- */
 
   const abrirDetalle = async (paciente: Paciente) => {
+    fichaActual.current = paciente.idPaciente
     setDetalle(paciente)
     setCitas([])
     setCargandoCitas(true)
     try {
-      setCitas(await apiGet<CitaPaciente[]>(`/api/citas?idPaciente=${paciente.idPaciente}`))
+      const lista = await apiGet<CitaPaciente[]>(`/api/citas?idPaciente=${paciente.idPaciente}`)
+      if (fichaActual.current === paciente.idPaciente) setCitas(lista)
     } catch {
-      setCitas([])
+      if (fichaActual.current === paciente.idPaciente) setCitas([])
     } finally {
-      setCargandoCitas(false)
+      if (fichaActual.current === paciente.idPaciente) setCargandoCitas(false)
     }
   }
 
@@ -417,36 +429,28 @@ function Pacientes() {
 
   return (
     <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 3 }}>
-        <Box>
-          <Typography variant="h5">Pacientes</Typography>
-          <Typography color="text.secondary">
-            {puedeEditar
-              ? 'Registra pacientes nuevos y mantén al día sus datos de contacto.'
-              : 'Consulta los datos y el historial de citas de los pacientes.'}
-          </Typography>
-        </Box>
-        {puedeEditar && (
-          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={abrirNuevo} sx={{ background: GRADIENT, alignSelf: { xs: 'flex-start', sm: 'center' } }}>
+      <EncabezadoPagina
+        icono={<PeopleAltOutlinedIcon />}
+        titulo="Pacientes"
+        descripcion={puedeEditar
+          ? 'Registra pacientes nuevos y mantén al día sus datos de contacto.'
+          : 'Consulta los datos, el historial de citas y abre su ficha clínica.'}
+        acciones={puedeEditar && (
+          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={abrirNuevo} sx={{ background: GRADIENT }}>
             Nuevo paciente
           </Button>
         )}
-      </Stack>
+      />
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { titulo: 'Activos', valor: resumen.activos },
-          { titulo: 'Con próxima cita', valor: resumen.conProximaCita },
-          { titulo: 'Con cuenta en el portal', valor: resumen.conCuenta },
-          { titulo: 'Menores de edad', valor: resumen.menores },
-        ].map((item) => (
+          { titulo: 'Activos', valor: resumen.activos, icono: <PeopleAltOutlinedIcon /> },
+          { titulo: 'Con próxima cita', valor: resumen.conProximaCita, icono: <EventAvailableOutlinedIcon /> },
+          { titulo: 'Con cuenta en el portal', valor: resumen.conCuenta, icono: <PhonelinkRingOutlinedIcon /> },
+          { titulo: 'Menores de edad', valor: resumen.menores, icono: <ChildCareOutlinedIcon /> },
+        ].map((item, i) => (
           <Grid key={item.titulo} size={{ xs: 6, md: 3 }}>
-            <Card sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>{item.titulo}</Typography>
-              {cargando ? <Skeleton width={40} height={40} /> : (
-                <Typography sx={{ fontSize: '1.7rem', fontWeight: 800 }}>{item.valor}</Typography>
-              )}
-            </Card>
+            <Indicador titulo={item.titulo} valor={item.valor} icono={item.icono} cargando={cargando} indice={i} />
           </Grid>
         ))}
       </Grid>
@@ -511,7 +515,7 @@ function Pacientes() {
                 <TableRow key={p.idPaciente} hover sx={{ cursor: 'pointer', opacity: p.activo ? 1 : 0.6 }} onClick={() => void abrirDetalle(p)}>
                   <TableCell>
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                      <Avatar sx={{ width: 38, height: 38, fontSize: '0.85rem', fontWeight: 800, bgcolor: '#eef4ff', color: '#2563eb' }}>
+                      <Avatar sx={{ width: 38, height: 38, fontSize: '0.85rem', fontWeight: 800, bgcolor: 'var(--rol-tint)', color: 'var(--rol-main)' }}>
                         {`${p.nombres.charAt(0)}${p.apellidos.charAt(0)}`.toUpperCase()}
                       </Avatar>
                       <Box>
@@ -629,6 +633,20 @@ function Pacientes() {
               )}
             </Box>
 
+            {esOdontologo && (
+              <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<DescriptionOutlinedIcon />}
+                  onClick={() => navigate(`/gestion/ficha-clinica?idPaciente=${detalle.idPaciente}`)}
+                  sx={{ background: GRADIENT }}
+                >
+                  Abrir ficha clínica
+                </Button>
+              </Box>
+            )}
+
             {puedeEditar && (
               <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', gap: 1 }}>
                 <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => abrirEditar(detalle)} fullWidth>Editar datos</Button>
@@ -642,7 +660,7 @@ function Pacientes() {
       </Drawer>
 
       {/* ===== Formulario ===== */}
-      <Dialog open={dialogo} onClose={() => !guardando && setDialogo(false)} fullWidth maxWidth="md">
+      <Dialog open={dialogo} onClose={alCerrar(() => setDialogo(false), { bloqueado: guardando })} fullWidth maxWidth="md">
         <Box component="form" onSubmit={guardar} noValidate>
           <DialogTitle sx={{ fontWeight: 800 }}>{creando ? 'Nuevo paciente' : 'Editar paciente'}</DialogTitle>
           <DialogContent dividers>
@@ -721,7 +739,7 @@ function Pacientes() {
       </Dialog>
 
       {/* ===== Activar / desactivar ===== */}
-      <Dialog open={cambioEstado !== null} onClose={() => !guardando && setCambioEstado(null)} fullWidth maxWidth="xs">
+      <Dialog open={cambioEstado !== null} onClose={alCerrar(() => setCambioEstado(null), { bloqueado: guardando })} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 800 }}>{cambioEstado?.activo ? 'Desactivar paciente' : 'Activar paciente'}</DialogTitle>
         <DialogContent>
           {errorEstado && <Alert severity="error" sx={{ mb: 2 }}>{errorEstado}</Alert>}
@@ -734,7 +752,7 @@ function Pacientes() {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button color="inherit" onClick={() => setCambioEstado(null)} disabled={guardando}>Cancelar</Button>
           <Button variant="contained" color={cambioEstado?.activo ? 'error' : 'success'} onClick={() => void confirmarEstado()} disabled={guardando}>
-            {cambioEstado?.activo ? 'Desactivar' : 'Activar'}
+            {guardando ? <CircularProgress size={20} color="inherit" /> : cambioEstado?.activo ? 'Desactivar' : 'Activar'}
           </Button>
         </DialogActions>
       </Dialog>

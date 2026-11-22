@@ -28,6 +28,7 @@ import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 
 import { apiGet, apiPost, mensajeError } from '../services/api'
 import { imprimirComprobante } from '../services/imprimir'
+import { alCerrar } from '../services/dialogos'
 
 /* =========================================================
    MIS PAGOS (portal del paciente)
@@ -227,7 +228,7 @@ function MisPagos() {
       </Card>
 
       {/* ===== Pago de demostración ===== */}
-      <Dialog open={pagando !== null} onClose={() => !guardando && setPagando(null)} fullWidth maxWidth="xs">
+      <Dialog open={pagando !== null} onClose={alCerrar(() => setPagando(null), { bloqueado: guardando })} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 800 }}>Pagar {pagando?.descripcion}</DialogTitle>
         <DialogContent dividers>
           <Alert severity="warning" icon={<ScienceOutlinedIcon />} sx={{ mb: 2 }}>
@@ -252,7 +253,7 @@ function MisPagos() {
       </Dialog>
 
       {/* ===== Pago exitoso ===== */}
-      <Dialog open={exito !== null} onClose={() => setExito(null)} fullWidth maxWidth="xs">
+      <Dialog open={exito !== null} onClose={alCerrar(() => setExito(null), { escape: true })} fullWidth maxWidth="xs">
         {exito && (
           <>
             <DialogContent sx={{ textAlign: 'center', pt: 4 }}>

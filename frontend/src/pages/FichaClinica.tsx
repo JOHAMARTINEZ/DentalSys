@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import Alert from '@mui/material/Alert'
@@ -41,6 +41,8 @@ import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined'
 import PersonSearchOutlinedIcon from '@mui/icons-material/PersonSearchOutlined'
 
 import { apiDelete, apiGet, apiPost, apiPut, getUsuarioSesion, mensajeError } from '../services/api'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
 
 /* =========================================================
    FICHA CLÍNICA (solo odontólogo)
@@ -51,7 +53,8 @@ import { apiDelete, apiGet, apiPost, apiPut, getUsuarioSesion, mensajeError } fr
    Endpoints: /api/fichas, /api/atenciones, /api/tratamientos
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })
 
 interface PacienteOpcion {
@@ -214,7 +217,7 @@ function Odontograma({ piezas, onChange, soloLectura }: {
                 color: activa ? '#fff' : '#526077',
                 background: activa ? GRADIENT : '#fff',
                 transition: 'all .15s',
-                '&:hover': soloLectura ? {} : { borderColor: '#60a5fa' },
+                '&:hover': soloLectura ? {} : { borderColor: 'primary.light' },
               }}
             >
               {pieza}
@@ -318,6 +321,11 @@ function FichaClinica() {
   const [verAtencion, setVerAtencion] = useState<Atencion | null>(null)
   const [aviso, setAviso] = useState('')
 
+  // Cambio de paciente con antecedentes sin guardar
+  const [pacientePendiente, setPacientePendiente] = useState<PacienteOpcion | null | undefined>(undefined)
+  // Evita mostrar la ficha de otro paciente si se cambia rápido
+  const pacienteActual = useRef<number | null>(null)
+
   /* ---------- Carga inicial ---------- */
 
   useEffect(() => {
@@ -337,6 +345,7 @@ function FichaClinica() {
   }, [sesion.idUsuario])
 
   const cargarPaciente = useCallback(async (idPaciente: number) => {
+    pacienteActual.current = idPaciente
     setCargando(true)
     setError('')
     try {
@@ -345,6 +354,7 @@ function FichaClinica() {
         apiGet<Atencion[]>(`/api/atenciones?idPaciente=${idPaciente}`),
         apiGet<CitaOpcion[]>(`/api/citas?idPaciente=${idPaciente}`),
       ])
+      if (pacienteActual.current !== idPaciente) return
       setFicha(f)
       setAntecedentes(f.antecedentesMedicos ?? '')
       setAlergias(f.alergias ?? '')
@@ -352,9 +362,9 @@ function FichaClinica() {
       setAtenciones(a)
       setCitas(c.filter((x) => !x.idAtencion && ['RESERVADA', 'CONFIRMADA', 'COMPLETADA'].includes(x.estado)))
     } catch (err) {
-      setError(mensajeError(err, 'No fue posible cargar la ficha.'))
+      if (pacienteActual.current === idPaciente) setError(mensajeError(err, 'No fue posible cargar la ficha.'))
     } finally {
-      setCargando(false)
+      if (pacienteActual.current === idPaciente) setCargando(false)
     }
   }, [])
 
@@ -363,6 +373,7 @@ function FichaClinica() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       void cargarPaciente(paciente.idPaciente)
     } else {
+      pacienteActual.current = null
       setFicha(null)
       setAtenciones([])
     }
@@ -537,6 +548,17 @@ function FichaClinica() {
     alergias !== (ficha.alergias ?? '') ||
     observacionesFicha !== (ficha.observaciones ?? ''))
 
+  /** Cambia de paciente; si hay antecedentes sin guardar, pide confirmación. */
+  const cambiarPaciente = (nuevo: PacienteOpcion | null) => {
+    if (nuevo?.idPaciente === paciente?.idPaciente) return
+    if (fichaModificada) {
+      setPacientePendiente(nuevo)
+      return
+    }
+    setPaciente(nuevo)
+    setPestana(0)
+  }
+
   const filaActual = filas.find((f) => f.clave === filaPiezas)
   const esPropia = (a: Atencion) => a.idOdontologo === sesion.idUsuario
 
@@ -546,22 +568,23 @@ function FichaClinica() {
 
   return (
     <Box>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' }, mb: 3 }}>
-        <Box>
-          <Typography variant="h5">Ficha clínica</Typography>
-          <Typography color="text.secondary">Antecedentes del paciente y registro de atenciones.</Typography>
-        </Box>
-        <Autocomplete
-          options={pacientes}
-          value={paciente}
-          onChange={(_, v) => { setPaciente(v); setPestana(0) }}
-          getOptionLabel={(p) => `${p.nombres} ${p.apellidos} · ${p.rut}`}
-          isOptionEqualToValue={(a, b) => a.idPaciente === b.idPaciente}
-          noOptionsText="Sin resultados"
-          sx={{ width: { xs: '100%', md: 420 } }}
-          renderInput={(params) => <TextField {...params} label="Buscar paciente" placeholder="Nombre o RUT" />}
-        />
-      </Stack>
+      <EncabezadoPagina
+        icono={<DescriptionOutlinedIcon />}
+        titulo="Ficha clínica"
+        descripcion="Antecedentes del paciente, odontograma y registro de atenciones."
+        acciones={(
+          <Autocomplete
+            options={pacientes}
+            value={paciente}
+            onChange={(_, v) => cambiarPaciente(v)}
+            getOptionLabel={(p) => `${p.nombres} ${p.apellidos} · ${p.rut}`}
+            isOptionEqualToValue={(a, b) => a.idPaciente === b.idPaciente}
+            noOptionsText="Sin resultados"
+            sx={{ width: { xs: '100%', md: 420 } }}
+            renderInput={(params) => <TextField {...params} label="Buscar paciente" placeholder="Nombre o RUT" />}
+          />
+        )}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -607,7 +630,7 @@ function FichaClinica() {
           <Card>
             <Tabs value={pestana} onChange={(_, v) => setPestana(v)} sx={{ px: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Tab label={`Atenciones (${atenciones.length})`} />
-              <Tab label="Antecedentes" />
+              <Tab label={fichaModificada ? 'Antecedentes •' : 'Antecedentes'} />
             </Tabs>
 
             {/* ===== Atenciones ===== */}
@@ -641,7 +664,7 @@ function FichaClinica() {
                         {a.tratamientos.length > 0 && (
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1 }}>
                             {a.tratamientos.map((t) => (
-                              <Chip key={t.idTratamiento} size="small" label={`${t.nombre}${t.cantidad > 1 ? ` ×${t.cantidad}` : ''}${t.piezas.length ? ` · ${t.piezas.map((p) => p.pieza).join(', ')}` : ''}`} sx={{ bgcolor: '#eef4ff', color: '#1d4ed8' }} />
+                              <Chip key={t.idTratamiento} size="small" label={`${t.nombre}${t.cantidad > 1 ? ` ×${t.cantidad}` : ''}${t.piezas.length ? ` · ${t.piezas.map((p) => p.pieza).join(', ')}` : ''}`} sx={{ bgcolor: 'var(--rol-tint)', color: 'var(--rol-dark)' }} />
                             ))}
                             <Chip size="small" label={`Total ${pesos.format(a.total)}`} variant="outlined" />
                           </Box>
@@ -672,8 +695,33 @@ function FichaClinica() {
         </>
       )}
 
+      {/* ===== Antecedentes sin guardar ===== */}
+      <Dialog open={pacientePendiente !== undefined} onClose={alCerrar(() => setPacientePendiente(undefined))} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>Cambios sin guardar</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Modificaste los antecedentes de {paciente?.nombres} {paciente?.apellidos} y no los has guardado.
+            Si cambias de paciente, esos cambios se perderán.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button color="inherit" onClick={() => setPacientePendiente(undefined)}>Volver</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => {
+              setPaciente(pacientePendiente ?? null)
+              setPestana(0)
+              setPacientePendiente(undefined)
+            }}
+          >
+            Descartar y cambiar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* ===== Editor de atención ===== */}
-      <Dialog open={editor} onClose={() => !guardando && setEditor(false)} fullWidth maxWidth="lg">
+      <Dialog open={editor} onClose={alCerrar(() => setEditor(false), { bloqueado: guardando })} fullWidth maxWidth="lg">
         <DialogTitle sx={{ fontWeight: 800 }}>
           {editando ? 'Atención (borrador)' : 'Nueva atención'} · {paciente?.nombres} {paciente?.apellidos}
         </DialogTitle>
@@ -779,7 +827,7 @@ function FichaClinica() {
       </Dialog>
 
       {/* ===== Piezas de un tratamiento ===== */}
-      <Dialog open={filaActual !== undefined} onClose={() => setFilaPiezas(null)} fullWidth maxWidth="md">
+      <Dialog open={filaActual !== undefined} onClose={alCerrar(() => setFilaPiezas(null))} fullWidth maxWidth="md">
         <DialogTitle sx={{ fontWeight: 800 }}>
           Piezas dentales · {catalogo.find((t) => t.idTratamiento === filaActual?.idTratamiento)?.nombre}
         </DialogTitle>
@@ -797,7 +845,7 @@ function FichaClinica() {
       </Dialog>
 
       {/* ===== Confirmaciones ===== */}
-      <Dialog open={confirmarCierre} onClose={() => !guardando && setConfirmarCierre(false)} maxWidth="xs" fullWidth>
+      <Dialog open={confirmarCierre} onClose={alCerrar(() => setConfirmarCierre(false), { bloqueado: guardando })} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>Cerrar atención</DialogTitle>
         <DialogContent>
           <Typography>Una vez cerrada, la atención no se puede modificar ni eliminar. Si viene de una cita, la cita quedará como completada.</Typography>
@@ -810,7 +858,7 @@ function FichaClinica() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmarEliminar} onClose={() => !guardando && setConfirmarEliminar(false)} maxWidth="xs" fullWidth>
+      <Dialog open={confirmarEliminar} onClose={alCerrar(() => setConfirmarEliminar(false), { bloqueado: guardando })} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>Eliminar borrador</DialogTitle>
         <DialogContent><Typography>Se descartará este borrador y sus tratamientos.</Typography></DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -820,7 +868,7 @@ function FichaClinica() {
       </Dialog>
 
       {/* ===== Detalle (solo lectura) ===== */}
-      <Dialog open={verAtencion !== null} onClose={() => setVerAtencion(null)} fullWidth maxWidth="md">
+      <Dialog open={verAtencion !== null} onClose={alCerrar(() => setVerAtencion(null), { escape: true })} fullWidth maxWidth="md">
         {verAtencion && (
           <>
             <DialogTitle sx={{ fontWeight: 800 }}>

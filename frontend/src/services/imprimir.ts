@@ -40,16 +40,46 @@ const ESTILOS = `
   @media print { body { padding: 0; } }
 `
 
+/**
+ * Imprime usando un marco oculto dentro de la misma página.
+ * A diferencia de abrir una ventana nueva, el navegador no lo bloquea
+ * aunque se llame después de guardar (por ejemplo, al registrar un pago).
+ */
 function abrirEImprimir(titulo: string, cuerpo: string) {
-  const ventana = window.open('', '_blank', 'width=820,height=900')
-  if (!ventana) {
-    alert('El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio.')
+  const marco = document.createElement('iframe')
+  marco.setAttribute('aria-hidden', 'true')
+  marco.title = titulo
+  Object.assign(marco.style, {
+    position: 'fixed',
+    right: '0',
+    bottom: '0',
+    width: '0',
+    height: '0',
+    border: '0',
+    visibility: 'hidden',
+  })
+  document.body.appendChild(marco)
+
+  const doc = marco.contentDocument
+  const ventana = marco.contentWindow
+  if (!doc || !ventana) {
+    marco.remove()
     return
   }
-  ventana.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${escapar(titulo)}</title><style>${ESTILOS}</style></head><body><div class="doc">${cuerpo}</div></body></html>`)
-  ventana.document.close()
-  ventana.focus()
-  setTimeout(() => ventana.print(), 300)
+
+  doc.open()
+  doc.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${escapar(titulo)}</title><style>${ESTILOS}</style></head><body><div class="doc">${cuerpo}</div></body></html>`)
+  doc.close()
+
+  // Se quita el marco cuando termina la impresión (o, por seguridad, al minuto)
+  const quitar = () => setTimeout(() => marco.remove(), 500)
+  ventana.addEventListener('afterprint', quitar, { once: true })
+  setTimeout(() => marco.remove(), 60000)
+
+  setTimeout(() => {
+    ventana.focus()
+    ventana.print()
+  }, 250)
 }
 
 export interface PagoImprimible {

@@ -52,6 +52,12 @@ import {
   ROL_LABEL,
 } from '../services/api'
 import type { Rol } from '../services/api'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
+import Indicador from '../components/ui/Indicador'
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined'
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined'
+import PhonelinkRingOutlinedIcon from '@mui/icons-material/PhonelinkRingOutlined'
 
 /* =========================================================
    USUARIOS (solo ADMIN)
@@ -62,7 +68,8 @@ import type { Rol } from '../services/api'
    Endpoints: /api/usuarios (ver UsuarioController).
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 
 interface SucursalResumen {
   idSucursal: number
@@ -122,11 +129,12 @@ const FORMULARIO_VACIO: Formulario = {
 
 const ROLES_CREABLES: Rol[] = ['ADMIN', 'RECEPCIONISTA', 'ODONTOLOGO']
 
+// Mismos colores que identifican a cada rol en el menú (ver temaRol.ts)
 const COLOR_ROL: Record<Rol, { bg: string; fg: string }> = {
-  ADMIN: { bg: '#ede9fe', fg: '#6d28d9' },
-  RECEPCIONISTA: { bg: '#e0f2fe', fg: '#0369a1' },
-  ODONTOLOGO: { bg: '#dbeafe', fg: '#1d4ed8' },
-  PACIENTE: { bg: '#ecfeff', fg: '#0e7490' },
+  ADMIN: { bg: '#eef0ff', fg: '#4338ca' },
+  RECEPCIONISTA: { bg: '#e8faf7', fg: '#0f766e' },
+  ODONTOLOGO: { bg: '#eef4ff', fg: '#1d4ed8' },
+  PACIENTE: { bg: '#f1f5f9', fg: '#475569' },
 }
 
 /* ---------- Validación de RUT (igual al backend) ---------- */
@@ -424,46 +432,27 @@ function Usuarios() {
   return (
     <Box>
       {/* Encabezado */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
-        sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 3 }}
-      >
-        <Box>
-          <Typography variant="h5">Usuarios del sistema</Typography>
-          <Typography color="text.secondary">
-            Crea las cuentas del personal y controla quién puede ingresar.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          onClick={abrirCrear}
-          sx={{ background: GRADIENT, alignSelf: { xs: 'flex-start', sm: 'center' } }}
-        >
-          Nuevo usuario
-        </Button>
-      </Stack>
+      <EncabezadoPagina
+        icono={<ManageAccountsOutlinedIcon />}
+        titulo="Usuarios del sistema"
+        descripcion="Crea las cuentas del personal y controla quién puede ingresar."
+        acciones={(
+          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={abrirCrear} sx={{ background: GRADIENT }}>
+            Nuevo usuario
+          </Button>
+        )}
+      />
 
       {/* Resumen */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { titulo: 'Total', valor: conteo.total },
-          { titulo: 'Activos', valor: conteo.activos },
-          { titulo: 'Personal', valor: conteo.personal },
-          { titulo: 'Pacientes con cuenta', valor: conteo.pacientes },
-        ].map((item) => (
+          { titulo: 'Total de cuentas', valor: conteo.total, icono: <ManageAccountsOutlinedIcon /> },
+          { titulo: 'Activas', valor: conteo.activos, icono: <VerifiedUserOutlinedIcon /> },
+          { titulo: 'Personal de la clínica', valor: conteo.personal, icono: <BadgeOutlinedIcon /> },
+          { titulo: 'Pacientes con cuenta', valor: conteo.pacientes, icono: <PhonelinkRingOutlinedIcon /> },
+        ].map((item, i) => (
           <Grid key={item.titulo} size={{ xs: 6, md: 3 }}>
-            <Card sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                {item.titulo}
-              </Typography>
-              {cargando ? (
-                <Skeleton width={40} height={40} />
-              ) : (
-                <Typography sx={{ fontSize: '1.7rem', fontWeight: 800 }}>{item.valor}</Typography>
-              )}
-            </Card>
+            <Indicador titulo={item.titulo} valor={item.valor} icono={item.icono} cargando={cargando} indice={i} />
           </Grid>
         ))}
       </Grid>
@@ -636,7 +625,7 @@ function Usuarios() {
       </Card>
 
       {/* ===== Diálogo crear / editar ===== */}
-      <Dialog open={dialogoAbierto} onClose={() => !guardando && setDialogoAbierto(false)} fullWidth maxWidth="md">
+      <Dialog open={dialogoAbierto} onClose={alCerrar(() => setDialogoAbierto(false), { bloqueado: guardando })} fullWidth maxWidth="md">
         <Box component="form" onSubmit={guardar} noValidate>
           <DialogTitle sx={{ fontWeight: 800 }}>
             {creando ? 'Nuevo usuario' : `Editar a ${editando.nombres} ${editando.apellidos}`}
@@ -781,7 +770,7 @@ function Usuarios() {
       </Dialog>
 
       {/* ===== Diálogo nueva contraseña ===== */}
-      <Dialog open={usuarioPassword !== null} onClose={() => !guardando && setUsuarioPassword(null)} fullWidth maxWidth="xs">
+      <Dialog open={usuarioPassword !== null} onClose={alCerrar(() => setUsuarioPassword(null), { bloqueado: guardando })} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 800 }}>Asignar nueva contraseña</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -819,7 +808,7 @@ function Usuarios() {
       </Dialog>
 
       {/* ===== Diálogo activar / desactivar ===== */}
-      <Dialog open={usuarioEstado !== null} onClose={() => !guardando && setUsuarioEstado(null)} fullWidth maxWidth="xs">
+      <Dialog open={usuarioEstado !== null} onClose={alCerrar(() => setUsuarioEstado(null), { bloqueado: guardando })} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 800 }}>
           {usuarioEstado?.activo ? 'Desactivar usuario' : 'Activar usuario'}
         </DialogTitle>

@@ -152,6 +152,7 @@ const COMPARATIVA: [string, boolean, boolean][] = [
 
 const PREGUNTAS = [
   ['¿Necesito una cuenta para reservar una hora?', 'No. Puedes reservar con tu RUT y tus datos de contacto. Con una cuenta, además puedes ver tus horas, atenciones, presupuestos y pagos.'],
+  ['¿Cómo creo mi cuenta?', 'Desde "Crear cuenta". Si ya eres paciente de la clínica, usa tu RUT y la fecha de nacimiento que tienes registrada, así tu cuenta queda unida a tu historial.'],
   ['¿Qué puedo hacer en el portal del paciente?', 'Revisar tus horas agendadas, el historial de tus atenciones, tus presupuestos y tus pagos.'],
   ['¿Mis datos están protegidos?', 'Sí. El portal requiere iniciar sesión y cada paciente solo puede ver su propia información.'],
 ]
@@ -281,25 +282,25 @@ function Logo({ dark = false, onClick }: { dark?: boolean; onClick?: () => void 
 function Home() {
   const navigate = useNavigate()
 
-  // "Reservar" lleva al login hasta que exista la reserva pública
   const handleLogin = () => navigate('/login')
   // "Reservar" lleva a la reserva de hora (con o sin sesión)
   const handleReservar = () => navigate('/reservar')
+  const handleRegistro = () => navigate('/registro')
 
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ color: 'text.primary', fontFamily: theme.typography.fontFamily }}>
-        <Navbar onLogin={handleLogin} onReservar={handleReservar} />
+        <Navbar onLogin={handleLogin} onReservar={handleReservar} onRegistro={handleRegistro} />
         <Box component="main">
           <Hero onLogin={handleLogin} onReservar={handleReservar} />
           <TrustBar />
           <Servicios />
           <ComoReservar />
-          <PortalPaciente onLogin={handleLogin} />
+          <PortalPaciente onLogin={handleLogin} onRegistro={handleRegistro} />
           <Preguntas />
           <LlamadoFinal onLogin={handleLogin} onReservar={handleReservar} />
         </Box>
-        <Footer onLogin={handleLogin} onReservar={handleReservar} />
+        <Footer onLogin={handleLogin} onReservar={handleReservar} onRegistro={handleRegistro} />
       </Box>
     </ThemeProvider>
   )
@@ -309,7 +310,7 @@ type Actions = { onLogin: () => void; onReservar: () => void }
 
 /* ---------- MENÚ SUPERIOR ---------- */
 
-function Navbar({ onLogin, onReservar }: Actions) {
+function Navbar({ onLogin, onReservar, onRegistro }: Actions & { onRegistro: () => void }) {
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 8 })
   const [open, setOpen] = useState(false)
   const onDark = !scrolled // arriba de todo el menú está sobre el hero oscuro
@@ -388,6 +389,7 @@ function Navbar({ onLogin, onReservar }: Actions) {
         <Box sx={{ display: 'grid', gap: 1.5 }}>
           <Button variant="contained" size="large" onClick={onReservar} sx={{ background: GRADIENT }}>Reservar hora</Button>
           <Button variant="outlined" size="large" onClick={onLogin}>Iniciar sesión</Button>
+          <Button size="large" onClick={onRegistro}>Crear cuenta de paciente</Button>
         </Box>
       </Drawer>
     </>
@@ -660,7 +662,7 @@ function ComoReservar() {
 
 /* ---------- PORTAL DEL PACIENTE ---------- */
 
-function PortalPaciente({ onLogin }: { onLogin: () => void }) {
+function PortalPaciente({ onLogin, onRegistro }: { onLogin: () => void; onRegistro: () => void }) {
   return (
     <Section id="portal">
       <Grid container spacing={{ xs: 6, md: 8 }} sx={{ alignItems: 'center' }}>
@@ -672,9 +674,14 @@ function PortalPaciente({ onLogin }: { onLogin: () => void }) {
             subtitle="Puedes reservar sin registrarte. Con tu cuenta, además sigues tus horas, atenciones, presupuestos y pagos."
           />
           <Reveal delay={150}>
-            <Button variant="contained" size="large" onClick={onLogin} sx={{ background: GRADIENT, boxShadow: '0 16px 36px -14px rgba(37,99,235,.8)' }}>
-              Ingresar a mi portal
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Button variant="contained" size="large" onClick={onLogin} sx={{ background: GRADIENT, boxShadow: '0 16px 36px -14px rgba(37,99,235,.8)' }}>
+                Ingresar a mi portal
+              </Button>
+              <Button variant="outlined" size="large" onClick={onRegistro}>
+                Crear mi cuenta
+              </Button>
+            </Box>
           </Reveal>
         </Grid>
 
@@ -785,14 +792,14 @@ function LlamadoFinal({ onLogin, onReservar }: Actions) {
 
 /* ---------- FOOTER ---------- */
 
-function Footer({ onLogin, onReservar }: Actions) {
+function Footer({ onLogin, onReservar, onRegistro }: Actions & { onRegistro: () => void }) {
   const linkSx = {
     justifyContent: 'flex-start', color: 'rgba(255,255,255,.65)', px: 0, py: 0.5, minWidth: 0, fontWeight: 400,
     '&:hover': { color: '#fff', bgcolor: 'transparent' },
   }
   const columnas: [string, [string, () => void][]][] = [
     ['Clínica', NAV.map((l) => [l.label, () => scrollToId(l.id)] as [string, () => void])],
-    ['Pacientes', [['Reservar hora', onReservar], ['Iniciar sesión', onLogin], ['Mi portal', onLogin]]],
+    ['Pacientes', [['Reservar hora', onReservar], ['Iniciar sesión', onLogin], ['Crear cuenta', onRegistro]]],
   ]
 
   return (

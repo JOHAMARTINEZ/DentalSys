@@ -7,6 +7,7 @@ import Card from '@mui/material/Card'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
+import Grid from '@mui/material/Grid'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -31,8 +32,14 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined'
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded'
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined'
+import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformationOutlined'
+import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
+import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined'
 
-import { apiGet, apiPost, apiPut, mensajeError } from '../services/api'
+import { apiGet, apiPost, apiPut, getRol, mensajeError } from '../services/api'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
+import Indicador from '../components/ui/Indicador'
 
 /* =========================================================
    CATÁLOGO DE TRATAMIENTOS (ADMIN y ODONTÓLOGO)
@@ -41,7 +48,8 @@ import { apiGet, apiPost, apiPut, mensajeError } from '../services/api'
    Los tratamientos no se eliminan: se desactivan.
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 
 interface Tratamiento {
   idTratamiento: number
@@ -55,6 +63,8 @@ interface Tratamiento {
 const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })
 
 function Tratamientos() {
+  const esOdontologo = getRol() === 'ODONTOLOGO'
+  const [procesando, setProcesando] = useState<number | null>(null)
   const [lista, setLista] = useState<Tratamiento[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
@@ -129,28 +139,58 @@ function Tratamientos() {
   }
 
   const cambiarEstado = async (t: Tratamiento) => {
+    if (procesando !== null) return
+    setProcesando(t.idTratamiento)
     try {
       await apiPut(`/api/tratamientos/${t.idTratamiento}/${t.activo ? 'desactivar' : 'activar'}`)
       setAviso(t.activo ? 'Tratamiento desactivado.' : 'Tratamiento activado.')
       await cargar()
     } catch (err) {
       setError(mensajeError(err))
+    } finally {
+      setProcesando(null)
     }
   }
 
+  const indicadores = useMemo(() => {
+    const activos = lista.filter((t) => t.activo)
+    const masUsado = [...lista].sort((a, b) => b.usos - a.usos)[0]
+    const promedio = activos.length ? activos.reduce((s, t) => s + t.costoBase, 0) / activos.length : 0
+    return {
+      activos: activos.length,
+      inactivos: lista.length - activos.length,
+      masUsado: masUsado && masUsado.usos > 0 ? masUsado.nombre : '—',
+      promedio,
+    }
+  }, [lista])
+
   return (
     <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 3 }}>
-        <Box>
-          <Typography variant="h5">Catálogo de tratamientos</Typography>
-          <Typography color="text.secondary">
-            Los tratamientos que se usan en las atenciones y presupuestos, con su valor de referencia.
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => abrir()} sx={{ background: GRADIENT, alignSelf: { xs: 'flex-start', sm: 'center' } }}>
-          Nuevo tratamiento
-        </Button>
-      </Stack>
+      <EncabezadoPagina
+        icono={<MedicalInformationOutlinedIcon />}
+        titulo="Catálogo de tratamientos"
+        descripcion={esOdontologo
+          ? 'Los tratamientos que usas en tus atenciones y presupuestos, con su valor de referencia.'
+          : 'Define los tratamientos de la clínica y su valor de referencia.'}
+        acciones={(
+          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => abrir()} sx={{ background: GRADIENT }}>
+            Nuevo tratamiento
+          </Button>
+        )}
+      />
+
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {[
+          { titulo: 'Activos', valor: indicadores.activos, icono: <MedicalServicesOutlinedIcon /> },
+          { titulo: 'Inactivos', valor: indicadores.inactivos, icono: <BlockOutlinedIcon /> },
+          { titulo: 'Valor promedio', valor: pesos.format(indicadores.promedio), icono: <PaidOutlinedIcon /> },
+          { titulo: 'Más usado', valor: <Box component="span" sx={{ fontSize: '1.05rem', display: 'block', lineHeight: 1.6, py: 0.6 }}>{indicadores.masUsado}</Box>, icono: <TrendingUpRoundedIcon /> },
+        ].map((item, i) => (
+          <Grid key={item.titulo} size={{ xs: 6, md: 3 }}>
+            <Indicador titulo={item.titulo} valor={item.valor} icono={item.icono} cargando={cargando} indice={i} />
+          </Grid>
+        ))}
+      </Grid>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -213,9 +253,13 @@ function Tratamientos() {
                       <IconButton onClick={() => abrir(t)} aria-label="Editar"><EditOutlinedIcon fontSize="small" /></IconButton>
                     </Tooltip>
                     <Tooltip title={t.activo ? 'Desactivar' : 'Activar'}>
-                      <IconButton color={t.activo ? 'error' : 'success'} onClick={() => void cambiarEstado(t)} aria-label={t.activo ? 'Desactivar' : 'Activar'}>
-                        {t.activo ? <BlockOutlinedIcon fontSize="small" /> : <CheckCircleOutlineRoundedIcon fontSize="small" />}
-                      </IconButton>
+                      <span>
+                        <IconButton color={t.activo ? 'error' : 'success'} onClick={() => void cambiarEstado(t)} disabled={procesando !== null} aria-label={t.activo ? 'Desactivar' : 'Activar'}>
+                          {procesando === t.idTratamiento
+                            ? <CircularProgress size={18} />
+                            : t.activo ? <BlockOutlinedIcon fontSize="small" /> : <CheckCircleOutlineRoundedIcon fontSize="small" />}
+                        </IconButton>
+                      </span>
                     </Tooltip>
                   </TableCell>
                 </TableRow>
@@ -225,7 +269,7 @@ function Tratamientos() {
         </TableContainer>
       </Card>
 
-      <Dialog open={dialogo} onClose={() => !guardando && setDialogo(false)} fullWidth maxWidth="sm">
+      <Dialog open={dialogo} onClose={alCerrar(() => setDialogo(false), { bloqueado: guardando })} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 800 }}>{editando ? 'Editar tratamiento' : 'Nuevo tratamiento'}</DialogTitle>
         <DialogContent dividers>
           {errorDialogo && <Alert severity="error" sx={{ mb: 2 }}>{errorDialogo}</Alert>}

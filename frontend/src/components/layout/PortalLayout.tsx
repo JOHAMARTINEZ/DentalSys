@@ -75,14 +75,20 @@ const theme = createTheme({
   components: {
     MuiButton: {
       defaultProps: { disableElevation: true },
-      styleOverrides: { root: { borderRadius: 999 } },
+      styleOverrides: {
+        root: {
+          borderRadius: 999,
+          transition: 'transform .15s ease, box-shadow .2s ease, filter .2s ease',
+          '&.MuiButton-contained:not(.Mui-disabled):hover': { transform: 'translateY(-1px)', filter: 'brightness(1.04)' },
+        },
+      },
     },
     MuiCard: {
       defaultProps: { elevation: 0 },
       styleOverrides: { root: { border: `1px solid ${C.line}`, borderRadius: 20 } },
     },
     MuiDialog: {
-      styleOverrides: { paper: { borderRadius: 20 } },
+      styleOverrides: { paper: { borderRadius: 20, animation: 'md-dialogo .28s cubic-bezier(.2,.8,.2,1)' } },
     },
     MuiTextField: {
       defaultProps: { size: 'small', fullWidth: true },
@@ -204,7 +210,10 @@ function PortalLayout() {
 
         {/* ===== Contenido ===== */}
         <Container maxWidth="lg" sx={{ position: 'relative', mt: { xs: -8, md: -9 }, pb: 10 }}>
-          <Outlet />
+          {/* key: al cambiar de sección se repite la animación de entrada */}
+          <Box key={ruta} sx={{ animation: 'md-aparecer .35s cubic-bezier(.2,.8,.2,1)' }}>
+            <Outlet />
+          </Box>
         </Container>
 
         {/* Menú de la cuenta (escritorio) */}

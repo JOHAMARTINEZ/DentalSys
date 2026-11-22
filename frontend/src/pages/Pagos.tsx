@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import Alert from '@mui/material/Alert'
 import Autocomplete from '@mui/material/Autocomplete'
@@ -33,9 +33,16 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined'
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined'
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
+import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined'
+import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined'
+import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 
 import { apiGet, apiPost, apiPut, mensajeError } from '../services/api'
 import { imprimirComprobante } from '../services/imprimir'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
+import Indicador from '../components/ui/Indicador'
 
 /* =========================================================
    PAGOS Y COMPROBANTES (recepción y administración)
@@ -46,7 +53,8 @@ import { imprimirComprobante } from '../services/imprimir'
    - Reimprimir comprobantes.
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })
 
 interface Pago {
@@ -129,7 +137,18 @@ function Pagos() {
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState('')
 
+  // Pago recién registrado (para ofrecer imprimir el comprobante)
+  const [registrado, setRegistrado] = useState<Pago | null>(null)
+  const pacienteActual = useRef<number | null>(null)
+
+  const rangoInvalido = Boolean(desde && hasta && desde > hasta)
+
   const cargar = useCallback(async () => {
+    if (desde && hasta && desde > hasta) {
+      setPagos([])
+      setCargando(false)
+      return
+    }
     setCargando(true)
     setError('')
     const params = new URLSearchParams()
@@ -195,14 +214,17 @@ function Pagos() {
     setPendientes([])
     setElegido(null)
     setMonto('')
+    setErrorDialogo('')
+    pacienteActual.current = p ? p.idPaciente : null
     if (!p) return
     setCargandoPendientes(true)
     try {
-      setPendientes(await apiGet<Pendiente[]>(`/api/pagos/pendientes?idPaciente=${p.idPaciente}`))
+      const lista = await apiGet<Pendiente[]>(`/api/pagos/pendientes?idPaciente=${p.idPaciente}`)
+      if (pacienteActual.current === p.idPaciente) setPendientes(lista)
     } catch (err) {
-      setErrorDialogo(mensajeError(err))
+      if (pacienteActual.current === p.idPaciente) setErrorDialogo(mensajeError(err))
     } finally {
-      setCargandoPendientes(false)
+      if (pacienteActual.current === p.idPaciente) setCargandoPendientes(false)
     }
   }
 
@@ -222,9 +244,8 @@ function Pagos() {
         medioPago: medio,
         observacion: observacion.trim() || null,
       })
-      setAviso(`Pago registrado. Comprobante ${pago.folio}.`)
       setDlgNuevo(false)
-      imprimirComprobante(pago)
+      setRegistrado(pago)
       await cargar()
     } catch (err) {
       setErrorDialogo(mensajeError(err, 'No fue posible registrar el pago.'))
@@ -258,33 +279,32 @@ function Pagos() {
 
   return (
     <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 3 }}>
-        <Box>
-          <Typography variant="h5">Pagos y comprobantes</Typography>
-          <Typography color="text.secondary">Registra abonos, emite comprobantes y revisa lo recaudado.</Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => void abrirNuevo()} sx={{ background: GRADIENT, alignSelf: { xs: 'flex-start', sm: 'center' } }}>
-          Registrar pago
-        </Button>
-      </Stack>
+      <EncabezadoPagina
+        icono={<PaymentsOutlinedIcon />}
+        titulo="Pagos y comprobantes"
+        descripcion="Registra abonos, emite comprobantes y revisa lo recaudado."
+        acciones={(
+          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => void abrirNuevo()} sx={{ background: GRADIENT }}>
+            Registrar pago
+          </Button>
+        )}
+      />
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { t: 'Recaudado en el periodo', v: pesos.format(resumen.total) },
-          { t: 'Pagos vigentes', v: String(resumen.cantidad) },
-          { t: 'Efectivo', v: pesos.format(resumen.efectivo) },
-          { t: 'Tarjeta y transferencia', v: pesos.format(resumen.otros) },
-        ].map((x) => (
+          { t: 'Recaudado en el periodo', v: pesos.format(resumen.total), i: <SavingsOutlinedIcon />, d: true },
+          { t: 'Pagos vigentes', v: String(resumen.cantidad), i: <ReceiptLongOutlinedIcon /> },
+          { t: 'Efectivo', v: pesos.format(resumen.efectivo), i: <PaymentsOutlinedIcon /> },
+          { t: 'Tarjeta y transferencia', v: pesos.format(resumen.otros), i: <CreditCardOutlinedIcon /> },
+        ].map((x, i) => (
           <Grid key={x.t} size={{ xs: 6, md: 3 }}>
-            <Card sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>{x.t}</Typography>
-              {cargando ? <Skeleton width={90} height={40} /> : <Typography sx={{ fontSize: '1.5rem', fontWeight: 800 }}>{x.v}</Typography>}
-            </Card>
+            <Indicador titulo={x.t} valor={x.v} icono={x.i} destacado={x.d} cargando={cargando} indice={i} />
           </Grid>
         ))}
       </Grid>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {rangoInvalido && <Alert severity="warning" sx={{ mb: 2 }}>La fecha "Desde" no puede ser posterior a "Hasta".</Alert>}
 
       <Card>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ p: 2 }}>
@@ -367,7 +387,7 @@ function Pagos() {
       </Card>
 
       {/* ===== Registrar pago ===== */}
-      <Dialog open={dlgNuevo} onClose={() => !guardando && setDlgNuevo(false)} fullWidth maxWidth="sm">
+      <Dialog open={dlgNuevo} onClose={alCerrar(() => setDlgNuevo(false), { bloqueado: guardando })} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 800 }}>Registrar pago</DialogTitle>
         <DialogContent dividers>
           {errorDialogo && <Alert severity="error" sx={{ mb: 2 }}>{errorDialogo}</Alert>}
@@ -401,7 +421,7 @@ function Pagos() {
                         onClick={() => { setElegido(p); setMonto(String(Math.round(p.saldo))) }}
                         sx={{
                           all: 'unset', boxSizing: 'border-box', width: '100%', cursor: 'pointer', p: 1.5, borderRadius: 2.5,
-                          border: '2px solid', borderColor: activo ? 'primary.main' : 'divider', bgcolor: activo ? '#eef4ff' : '#fff',
+                          border: '2px solid', borderColor: activo ? 'primary.main' : 'divider', bgcolor: activo ? 'var(--rol-tint)' : '#fff',
                           display: 'flex', justifyContent: 'space-between', gap: 2,
                         }}
                       >
@@ -442,7 +462,7 @@ function Pagos() {
       </Dialog>
 
       {/* ===== Anular ===== */}
-      <Dialog open={anulando !== null} onClose={() => !guardando && setAnulando(null)} fullWidth maxWidth="xs">
+      <Dialog open={anulando !== null} onClose={alCerrar(() => setAnulando(null), { bloqueado: guardando })} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 800 }}>Anular pago</DialogTitle>
         <DialogContent>
           {errorDialogo && <Alert severity="error" sx={{ mb: 2 }}>{errorDialogo}</Alert>}
@@ -459,6 +479,27 @@ function Pagos() {
             {guardando ? <CircularProgress size={20} color="inherit" /> : 'Anular pago'}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* ===== Pago registrado ===== */}
+      <Dialog open={registrado !== null} onClose={alCerrar(() => setRegistrado(null), { escape: true })} fullWidth maxWidth="xs">
+        {registrado && (
+          <>
+            <DialogContent sx={{ textAlign: 'center', pt: 4 }}>
+              <TaskAltRoundedIcon sx={{ fontSize: 64, color: 'success.main', mx: 'auto' }} />
+              <Typography variant="h6" sx={{ mt: 1 }}>Pago registrado</Typography>
+              <Typography sx={{ fontSize: '2rem', fontWeight: 800 }}>{pesos.format(registrado.monto)}</Typography>
+              <Typography color="text.secondary">
+                {registrado.pacienteNombre} · {MEDIOS[registrado.medioPago] ?? registrado.medioPago}
+              </Typography>
+              <Chip label={`Comprobante ${registrado.folio ?? ''}`} sx={{ mt: 1.5, bgcolor: 'var(--rol-tint)', color: 'var(--rol-dark)' }} />
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center', gap: 1 }}>
+              <Button startIcon={<PrintOutlinedIcon />} onClick={() => imprimirComprobante(registrado)}>Imprimir comprobante</Button>
+              <Button variant="contained" onClick={() => setRegistrado(null)} sx={{ background: GRADIENT }}>Listo</Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
 
       <Snackbar open={Boolean(aviso)} autoHideDuration={4000} onClose={() => setAviso('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>

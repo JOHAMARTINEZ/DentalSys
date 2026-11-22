@@ -36,9 +36,16 @@ import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined'
+import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
+import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined'
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined'
 
 import { apiGet, apiPost, apiPut, getRol, getUsuarioSesion, mensajeError } from '../services/api'
 import { imprimirComprobante, imprimirPresupuesto } from '../services/imprimir'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
+import Indicador from '../components/ui/Indicador'
 
 /* =========================================================
    PRESUPUESTOS
@@ -49,7 +56,8 @@ import { imprimirComprobante, imprimirPresupuesto } from '../services/imprimir'
    - El saldo viene de la vista vw_saldo_presupuesto.
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })
 
 type Estado = 'PENDIENTE' | 'ACEPTADO' | 'RECHAZADO' | 'VENCIDO' | 'ANULADO'
@@ -227,7 +235,7 @@ function Odontograma({ piezas, onChange, soloLectura }: {
                 color: activa ? '#fff' : '#526077',
                 background: activa ? GRADIENT : '#fff',
                 transition: 'all .15s',
-                '&:hover': soloLectura ? {} : { borderColor: '#60a5fa' },
+                '&:hover': soloLectura ? {} : { borderColor: 'primary.light' },
               }}
             >
               {pieza}
@@ -327,6 +335,8 @@ function Presupuestos() {
 
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState('')
+  // Último abono registrado: el aviso ofrece imprimir su comprobante
+  const [ultimoPago, setUltimoPago] = useState<Pago | null>(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -516,8 +526,8 @@ function Presupuestos() {
         observacion: obsAbono.trim() || null,
       })
       setAviso(`Abono registrado. Comprobante ${pago.folio}.`)
+      setUltimoPago(pago)
       setDlgAbono(false)
-      imprimirComprobante(pago)
       await refrescarDetalle(detalle.idPresupuesto)
     } catch (err) {
       setErrorDetalle(mensajeError(err, 'No fue posible registrar el abono.'))
@@ -534,34 +544,28 @@ function Presupuestos() {
 
   return (
     <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 3 }}>
-        <Box>
-          <Typography variant="h5">Presupuestos</Typography>
-          <Typography color="text.secondary">
-            {esOdontologo
-              ? 'Emite presupuestos de tratamiento para tus pacientes.'
-              : 'Registra la respuesta del paciente y sus abonos.'}
-          </Typography>
-        </Box>
-        {esOdontologo && (
-          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={abrirNuevo} sx={{ background: GRADIENT, alignSelf: { xs: 'flex-start', sm: 'center' } }}>
+      <EncabezadoPagina
+        icono={<RequestQuoteOutlinedIcon />}
+        titulo="Presupuestos"
+        descripcion={esOdontologo
+          ? 'Emite presupuestos de tratamiento para tus pacientes y revisa su avance.'
+          : 'Registra la respuesta del paciente y sus abonos.'}
+        acciones={esOdontologo && (
+          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={abrirNuevo} sx={{ background: GRADIENT }}>
             Nuevo presupuesto
           </Button>
         )}
-      </Stack>
+      />
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { titulo: 'Pendientes de respuesta', valor: String(resumen.pendientes) },
-          { titulo: 'Aceptados', valor: String(resumen.aceptados) },
-          { titulo: 'Abonado (aceptados)', valor: pesos.format(resumen.abonado) },
-          { titulo: 'Por cobrar', valor: pesos.format(resumen.porCobrar) },
-        ].map((item) => (
+          { titulo: 'Pendientes de respuesta', valor: String(resumen.pendientes), icono: <PendingActionsOutlinedIcon />, destacado: !esOdontologo && resumen.pendientes > 0 },
+          { titulo: 'Aceptados', valor: String(resumen.aceptados), icono: <TaskAltRoundedIcon /> },
+          { titulo: 'Abonado (aceptados)', valor: pesos.format(resumen.abonado), icono: <SavingsOutlinedIcon /> },
+          { titulo: 'Por cobrar', valor: pesos.format(resumen.porCobrar), icono: <AccountBalanceWalletOutlinedIcon /> },
+        ].map((item, i) => (
           <Grid key={item.titulo} size={{ xs: 6, md: 3 }}>
-            <Card sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>{item.titulo}</Typography>
-              {cargando ? <Skeleton width={80} height={40} /> : <Typography sx={{ fontSize: '1.5rem', fontWeight: 800 }}>{item.valor}</Typography>}
-            </Card>
+            <Indicador titulo={item.titulo} valor={item.valor} icono={item.icono} destacado={item.destacado} cargando={cargando} indice={i} />
           </Grid>
         ))}
       </Grid>
@@ -597,14 +601,21 @@ function Presupuestos() {
 
       {!cargando && visibles.length > 0 && (
         <Grid container spacing={2}>
-          {visibles.map((p) => {
+          {visibles.map((p, indice) => {
             const estado = ESTADOS[p.estado]
             const avance = Number(p.montoTotal) > 0 ? (Number(p.totalAbonado) / Number(p.montoTotal)) * 100 : 0
             return (
               <Grid key={p.idPresupuesto} size={{ xs: 12, md: 6, xl: 4 }}>
                 <Card
                   onClick={() => void abrirDetalle(p)}
-                  sx={{ p: 2.5, cursor: 'pointer', height: '100%', transition: 'all .15s', '&:hover': { borderColor: '#93c5fd', boxShadow: '0 12px 28px -20px rgba(37,99,235,.6)' } }}
+                  sx={{
+                    p: 2.5,
+                    cursor: 'pointer',
+                    height: '100%',
+                    transition: 'transform .2s ease, box-shadow .25s ease, border-color .25s ease',
+                    animation: `md-aparecer .4s ${Math.min(indice, 8) * 40}ms cubic-bezier(.2,.8,.2,1) both`,
+                    '&:hover': { borderColor: 'primary.light', transform: 'translateY(-2px)', boxShadow: '0 14px 30px -20px var(--rol-sombra)' },
+                  }}
                 >
                   <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
                     <Box sx={{ minWidth: 0 }}>
@@ -640,7 +651,7 @@ function Presupuestos() {
       )}
 
       {/* ===== Detalle ===== */}
-      <Dialog open={detalle !== null && !dlgAbono && confirmar === null} onClose={() => setDetalle(null)} fullWidth maxWidth="md">
+      <Dialog open={detalle !== null && !dlgAbono && confirmar === null} onClose={alCerrar(() => setDetalle(null), { escape: true })} fullWidth maxWidth="md">
         {detalle && (
           <>
             <DialogTitle sx={{ pr: 6 }}>
@@ -741,7 +752,7 @@ function Presupuestos() {
       </Dialog>
 
       {/* ===== Confirmar estado ===== */}
-      <Dialog open={confirmar !== null} onClose={() => !guardando && setConfirmar(null)} maxWidth="xs" fullWidth>
+      <Dialog open={confirmar !== null} onClose={alCerrar(() => setConfirmar(null), { bloqueado: guardando })} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>
           {confirmar === 'ANULADO' ? 'Anular presupuesto' : confirmar === 'ACEPTADO' ? 'Registrar aceptación' : 'Registrar rechazo'}
         </DialogTitle>
@@ -763,7 +774,7 @@ function Presupuestos() {
       </Dialog>
 
       {/* ===== Abono ===== */}
-      <Dialog open={dlgAbono} onClose={() => !guardando && setDlgAbono(false)} maxWidth="xs" fullWidth>
+      <Dialog open={dlgAbono} onClose={alCerrar(() => setDlgAbono(false), { bloqueado: guardando })} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>Registrar abono</DialogTitle>
         <DialogContent dividers>
           {errorDetalle && <Alert severity="error" sx={{ mb: 2 }}>{errorDetalle}</Alert>}
@@ -781,7 +792,7 @@ function Presupuestos() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button color="inherit" onClick={() => setDlgAbono(false)} disabled={guardando}>Cancelar</Button>
+          <Button color="inherit" onClick={() => { setDlgAbono(false); setErrorDetalle('') }} disabled={guardando}>Cancelar</Button>
           <Button variant="contained" onClick={() => void registrarAbono()} disabled={guardando} sx={{ background: GRADIENT }}>
             {guardando ? <CircularProgress size={20} color="inherit" /> : 'Registrar y emitir comprobante'}
           </Button>
@@ -789,7 +800,7 @@ function Presupuestos() {
       </Dialog>
 
       {/* ===== Editor ===== */}
-      <Dialog open={editor} onClose={() => !guardando && setEditor(false)} fullWidth maxWidth="lg">
+      <Dialog open={editor} onClose={alCerrar(() => setEditor(false), { bloqueado: guardando })} fullWidth maxWidth="lg">
         <DialogTitle sx={{ fontWeight: 800 }}>{editando ? `Editar presupuesto N° ${editando.idPresupuesto}` : 'Nuevo presupuesto'}</DialogTitle>
         <DialogContent dividers>
           {errorEditor && <Alert severity="error" sx={{ mb: 2 }}>{errorEditor}</Alert>}
@@ -869,7 +880,7 @@ function Presupuestos() {
       </Dialog>
 
       {/* ===== Piezas ===== */}
-      <Dialog open={filaActual !== undefined} onClose={() => setFilaPiezas(null)} fullWidth maxWidth="md">
+      <Dialog open={filaActual !== undefined} onClose={alCerrar(() => setFilaPiezas(null))} fullWidth maxWidth="md">
         <DialogTitle sx={{ fontWeight: 800 }}>Piezas dentales · {catalogo.find((t) => t.idTratamiento === filaActual?.idTratamiento)?.nombre}</DialogTitle>
         <DialogContent dividers>
           {filaActual && <Odontograma piezas={filaActual.piezas} onChange={(p) => cambiarFila(filaActual.clave, { piezas: p })} />}
@@ -879,8 +890,24 @@ function Presupuestos() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={Boolean(aviso)} autoHideDuration={4000} onClose={() => setAviso('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity="success" variant="filled" onClose={() => setAviso('')}>{aviso}</Alert>
+      <Snackbar
+        open={Boolean(aviso)}
+        autoHideDuration={ultimoPago ? 8000 : 4000}
+        onClose={(_, motivo) => { if (motivo !== 'clickaway') { setAviso(''); setUltimoPago(null) } }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          onClose={() => { setAviso(''); setUltimoPago(null) }}
+          action={ultimoPago ? (
+            <Button color="inherit" size="small" startIcon={<PrintOutlinedIcon />} onClick={() => imprimirComprobante(ultimoPago)}>
+              Imprimir
+            </Button>
+          ) : undefined}
+        >
+          {aviso}
+        </Alert>
       </Snackbar>
     </Box>
   )

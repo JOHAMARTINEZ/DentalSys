@@ -43,8 +43,15 @@ import EventRepeatOutlinedIcon from '@mui/icons-material/EventRepeatOutlined'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
+import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined'
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
+import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 
 import { apiGet, apiPost, apiPut, getRol, mensajeError } from '../services/api'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
+import Indicador from '../components/ui/Indicador'
 
 /* =========================================================
    AGENDA
@@ -57,7 +64,8 @@ import { apiGet, apiPost, apiPut, getRol, mensajeError } from '../services/api'
      (horario del odontólogo, bloqueos y citas ya tomadas).
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 
 type Estado = 'RESERVADA' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA' | 'NO_ASISTIO'
 
@@ -285,7 +293,12 @@ function TarjetaCita({ cita, compacta, mostrarOdontologo, onClick }: {
         backgroundColor: cita.estado === 'CANCELADA' ? '#fafafa' : '#fff',
         opacity: cita.estado === 'CANCELADA' ? 0.65 : 1,
         transition: 'all .15s',
-        '&:hover, &:focus-visible': { borderColor: '#93c5fd', boxShadow: '0 8px 20px -14px rgba(37,99,235,.6)' },
+        '&:hover, &:focus-visible': {
+          borderColor: 'primary.light',
+          borderLeftColor: estado.color,
+          boxShadow: '0 8px 20px -14px var(--rol-sombra)',
+          transform: compacta ? 'none' : 'translateX(2px)',
+        },
       }}
     >
       <Box sx={{ minWidth: compacta ? 0 : 74 }}>
@@ -567,14 +580,14 @@ function Agenda() {
   return (
     <Box>
       {/* Encabezado */}
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' }, mb: 2.5 }}>
-        <Box>
-          <Typography variant="h5" sx={{ textTransform: 'capitalize' }}>{tituloRango}</Typography>
-          <Typography color="text.secondary">
-            {esOdontologo ? 'Tu agenda de atención' : 'Agenda de la clínica'}
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
+      <EncabezadoPagina
+        icono={<CalendarMonthOutlinedIcon />}
+        titulo={<Box component="span" sx={{ textTransform: 'capitalize' }}>{tituloRango}</Box>}
+        descripcion={esOdontologo
+          ? 'Tu agenda de atención. Abre una cita para registrar la atención clínica.'
+          : 'Agenda de la clínica: agenda, confirma, reprograma y registra asistencia.'}
+        acciones={(
+        <>
           <ToggleButtonGroup size="small" exclusive value={vista} onChange={(_, v) => v && setVista(v)}>
             <ToggleButton value="dia" sx={{ px: 2 }}>Día</ToggleButton>
             <ToggleButton value="semana" sx={{ px: 2 }}>Semana</ToggleButton>
@@ -588,22 +601,20 @@ function Agenda() {
               Nueva cita
             </Button>
           )}
-        </Stack>
-      </Stack>
+        </>
+        )}
+      />
 
       {/* Resumen */}
       <Grid container spacing={2} sx={{ mb: 2.5 }}>
         {[
-          { titulo: vista === 'dia' ? 'Citas del día' : 'Citas de la semana', valor: resumen.total },
-          { titulo: 'Por confirmar', valor: resumen.porConfirmar },
-          { titulo: 'Confirmadas', valor: resumen.confirmadas },
-          { titulo: 'Completadas', valor: resumen.completadas },
-        ].map((item) => (
+          { titulo: vista === 'dia' ? 'Citas del día' : 'Citas de la semana', valor: resumen.total, icono: <CalendarMonthOutlinedIcon /> },
+          { titulo: 'Por confirmar', valor: resumen.porConfirmar, icono: <PendingActionsOutlinedIcon />, destacado: resumen.porConfirmar > 0 },
+          { titulo: 'Confirmadas', valor: resumen.confirmadas, icono: <EventAvailableOutlinedIcon /> },
+          { titulo: 'Completadas', valor: resumen.completadas, icono: <TaskAltRoundedIcon /> },
+        ].map((item, i) => (
           <Grid key={item.titulo} size={{ xs: 6, md: 3 }}>
-            <Card sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>{item.titulo}</Typography>
-              {cargando ? <Skeleton width={40} height={40} /> : <Typography sx={{ fontSize: '1.7rem', fontWeight: 800 }}>{item.valor}</Typography>}
-            </Card>
+            <Indicador titulo={item.titulo} valor={item.valor} icono={item.icono} destacado={item.destacado} cargando={cargando} indice={i} />
           </Grid>
         ))}
       </Grid>
@@ -694,7 +705,7 @@ function Agenda() {
       )}
 
       {/* ===== Detalle de la cita ===== */}
-      <Dialog open={detalle !== null && !dialogoNueva && cambio === null} onClose={() => setDetalle(null)} fullWidth maxWidth="sm">
+      <Dialog open={detalle !== null && !dialogoNueva && cambio === null} onClose={alCerrar(() => setDetalle(null), { escape: true })} fullWidth maxWidth="sm">
         {detalle && (
           <>
             <DialogTitle sx={{ pr: 6 }}>
@@ -789,7 +800,7 @@ function Agenda() {
       </Dialog>
 
       {/* ===== Confirmar cambio de estado ===== */}
-      <Dialog open={cambio !== null} onClose={() => !guardando && setCambio(null)} fullWidth maxWidth="xs">
+      <Dialog open={cambio !== null} onClose={alCerrar(() => setCambio(null), { bloqueado: guardando })} fullWidth maxWidth="xs">
         {cambio && (
           <>
             <DialogTitle sx={{ fontWeight: 800 }}>
@@ -825,7 +836,7 @@ function Agenda() {
       </Dialog>
 
       {/* ===== Nueva cita / reprogramar ===== */}
-      <Dialog open={dialogoNueva} onClose={() => !guardando && setDialogoNueva(false)} fullWidth maxWidth="md">
+      <Dialog open={dialogoNueva} onClose={alCerrar(() => setDialogoNueva(false), { bloqueado: guardando })} fullWidth maxWidth="md">
         <DialogTitle sx={{ fontWeight: 800 }}>
           {reprogramando ? `Reprogramar cita de ${reprogramando.pacienteNombre}` : 'Nueva cita'}
         </DialogTitle>

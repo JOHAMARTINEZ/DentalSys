@@ -30,6 +30,8 @@ import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded'
 
 import { apiDelete, apiGet, apiPost, apiPut, getRol, getUsuarioSesion, mensajeError } from '../services/api'
+import { alCerrar } from '../services/dialogos'
+import EncabezadoPagina from '../components/ui/EncabezadoPagina'
 
 /* =========================================================
    HORARIOS DE ATENCIÓN Y BLOQUEOS
@@ -40,7 +42,8 @@ import { apiDelete, apiGet, apiPost, apiPut, getRol, getUsuarioSesion, mensajeEr
    Recepción y administración editan; el odontólogo ve los suyos.
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
@@ -110,6 +113,7 @@ function Horarios() {
   const [bloqueos, setBloqueos] = useState<Bloqueo[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [listasCargadas, setListasCargadas] = useState(false)
 
   // Diálogo horario
   const [dlgHorario, setDlgHorario] = useState(false)
@@ -153,9 +157,20 @@ function Horarios() {
   }, [idOdontologo])
 
   useEffect(() => {
+    // Recepción y administración: se espera a tener el odontólogo elegido
+    // (evita cargar y mostrar por un instante los horarios de todos)
+    if (rol !== 'ODONTOLOGO' && idOdontologo === '') return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void cargar()
-  }, [cargar])
+  }, [cargar, rol, idOdontologo])
+
+  useEffect(() => {
+    // Sin odontólogos registrados: no hay nada que cargar
+    if (listasCargadas && rol !== 'ODONTOLOGO' && idOdontologo === '') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCargando(false)
+    }
+  }, [listasCargadas, rol, idOdontologo])
 
   useEffect(() => {
     Promise.all([apiGet<Odontologo[]>('/api/odontologos'), apiGet<Sucursal[]>('/api/sucursales')])
@@ -166,9 +181,10 @@ function Horarios() {
           setIdOdontologo((actual) => actual || o[0].idUsuario)
         }
       })
-      .catch(() => {
-        // Si falla, la página muestra el error de carga principal
+      .catch((err) => {
+        setError(mensajeError(err, 'No fue posible cargar los odontólogos.'))
       })
+      .finally(() => setListasCargadas(true))
   }, [rol])
 
   const odontologo = odontologos.find((o) => o.idUsuario === idOdontologo)
@@ -313,25 +329,22 @@ function Horarios() {
 
   return (
     <Box>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' }, mb: 3 }}>
-        <Box>
-          <Typography variant="h5">Horarios de atención</Typography>
-          <Typography color="text.secondary">
-            {gestiona
-              ? 'Define cuándo atiende cada odontólogo. Solo se podrán reservar horas dentro de estos tramos.'
-              : 'Tu horario semanal y los periodos sin atención.'}
-          </Typography>
-        </Box>
-        {rol !== 'ODONTOLOGO' && (
-          <TextField select label="Odontólogo" value={idOdontologo} onChange={(e) => setIdOdontologo(Number(e.target.value))} sx={{ minWidth: 260 }}>
+      <EncabezadoPagina
+        icono={<ScheduleOutlinedIcon />}
+        titulo={rol === 'ODONTOLOGO' ? 'Mi horario de atención' : 'Horarios de atención'}
+        descripcion={gestiona
+          ? 'Define cuándo atiende cada odontólogo. Solo se podrán reservar horas dentro de estos tramos.'
+          : 'Tu horario semanal y los periodos sin atención.'}
+        acciones={rol !== 'ODONTOLOGO' && (
+          <TextField select label="Odontólogo" value={idOdontologo} onChange={(e) => setIdOdontologo(Number(e.target.value))} sx={{ minWidth: 260 }} disabled={odontologos.length === 0}>
             {odontologos.map((o) => <MenuItem key={o.idUsuario} value={o.idUsuario}>{o.nombres} {o.apellidos}</MenuItem>)}
           </TextField>
         )}
-      </Stack>
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {odontologos.length === 0 && !cargando && rol !== 'ODONTOLOGO' && (
+      {odontologos.length === 0 && listasCargadas && rol !== 'ODONTOLOGO' && (
         <Alert severity="info" sx={{ mb: 2 }}>No hay odontólogos activos. Créalos en la página Usuarios.</Alert>
       )}
 
@@ -346,7 +359,9 @@ function Horarios() {
           <Box sx={{ p: { xs: 2, sm: 3 } }}>
             <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography color="text.secondary">
-                {horarios.length === 0 ? 'Sin horario configurado' : `${horasSemanales} horas semanales`}
+                {horarios.length === 0
+                  ? 'Sin horario configurado'
+                  : `${horasSemanales.toLocaleString('es-CL', { maximumFractionDigits: 1 })} horas semanales · ${horarios.length} ${horarios.length === 1 ? 'tramo' : 'tramos'}`}
               </Typography>
               {gestiona && idOdontologo !== '' && (
                 <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => abrirHorario()} sx={{ background: GRADIENT }}>
@@ -359,14 +374,29 @@ function Horarios() {
               <Grid container spacing={1.5}>
                 {DIAS.map((nombre, i) => {
                   const delDia = horarios.filter((h) => h.diaSemana === i + 1)
+                  const esHoy = ((new Date().getDay() + 6) % 7) === i
                   return (
                     <Grid key={nombre} size={{ xs: 12, sm: 6, md: 'grow' }}>
-                      <Box sx={{ p: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', minHeight: 140, backgroundColor: delDia.length ? '#fff' : '#fafbfd' }}>
-                        <Typography sx={{ fontWeight: 800, mb: 1 }}>{nombre}</Typography>
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: esHoy ? 'primary.main' : 'divider',
+                          minHeight: 140,
+                          height: '100%',
+                          backgroundColor: delDia.length ? '#fff' : '#fafbfd',
+                          animation: `md-aparecer .4s ${i * 40}ms cubic-bezier(.2,.8,.2,1) both`,
+                        }}
+                      >
+                        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography sx={{ fontWeight: 800, color: esHoy ? 'primary.main' : 'text.primary' }}>{nombre}</Typography>
+                          {esHoy && <Chip size="small" label="Hoy" color="primary" sx={{ height: 20, fontSize: '0.68rem' }} />}
+                        </Stack>
                         {delDia.length === 0 && <Typography variant="caption" color="text.secondary">No atiende</Typography>}
                         <Stack spacing={0.75}>
                           {delDia.map((h) => (
-                            <Box key={h.idHorario} sx={{ p: 1, borderRadius: 2, bgcolor: '#eef4ff', color: '#1d4ed8' }}>
+                            <Box key={h.idHorario} sx={{ p: 1, borderRadius: 2, bgcolor: 'var(--rol-tint)', color: 'var(--rol-dark)' }}>
                               <Typography sx={{ fontWeight: 800, fontSize: '0.85rem' }}>{corta(h.horaInicio)} – {corta(h.horaFin)}</Typography>
                               <Typography variant="caption" sx={{ display: 'block', color: '#526077' }}>{h.sucursalNombre}</Typography>
                               {gestiona && (
@@ -431,7 +461,7 @@ function Horarios() {
       </Card>
 
       {/* ===== Diálogo tramo ===== */}
-      <Dialog open={dlgHorario} onClose={() => !guardando && setDlgHorario(false)} fullWidth maxWidth="sm">
+      <Dialog open={dlgHorario} onClose={alCerrar(() => setDlgHorario(false), { bloqueado: guardando })} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 800 }}>{editando ? 'Editar tramo' : 'Agregar tramo de atención'}</DialogTitle>
         <DialogContent dividers>
           {errorDialogo && <Alert severity="error" sx={{ mb: 2 }}>{errorDialogo}</Alert>}
@@ -484,7 +514,7 @@ function Horarios() {
       </Dialog>
 
       {/* ===== Diálogo bloqueo ===== */}
-      <Dialog open={dlgBloqueo} onClose={() => !guardando && setDlgBloqueo(false)} fullWidth maxWidth="sm">
+      <Dialog open={dlgBloqueo} onClose={alCerrar(() => setDlgBloqueo(false), { bloqueado: guardando })} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 800 }}>Bloquear agenda</DialogTitle>
         <DialogContent dividers>
           {errorDialogo && <Alert severity="error" sx={{ mb: 2 }}>{errorDialogo}</Alert>}
@@ -510,7 +540,7 @@ function Horarios() {
       </Dialog>
 
       {/* ===== Confirmaciones ===== */}
-      <Dialog open={eliminarHorario !== null} onClose={() => !guardando && setEliminarHorario(null)} maxWidth="xs" fullWidth>
+      <Dialog open={eliminarHorario !== null} onClose={alCerrar(() => setEliminarHorario(null), { bloqueado: guardando })} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>Eliminar tramo</DialogTitle>
         <DialogContent>
           <Typography>
@@ -520,18 +550,18 @@ function Horarios() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button color="inherit" onClick={() => setEliminarHorario(null)} disabled={guardando}>Cancelar</Button>
-          <Button variant="contained" color="error" onClick={() => void confirmarEliminarHorario()} disabled={guardando}>Eliminar</Button>
+          <Button variant="contained" color="error" onClick={() => void confirmarEliminarHorario()} disabled={guardando}>{guardando ? <CircularProgress size={20} color="inherit" /> : 'Eliminar'}</Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={anularBloqueo !== null} onClose={() => !guardando && setAnularBloqueo(null)} maxWidth="xs" fullWidth>
+      <Dialog open={anularBloqueo !== null} onClose={alCerrar(() => setAnularBloqueo(null), { bloqueado: guardando })} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>Anular bloqueo</DialogTitle>
         <DialogContent>
           <Typography>Las horas de ese periodo volverán a estar disponibles para reservar.</Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button color="inherit" onClick={() => setAnularBloqueo(null)} disabled={guardando}>Cancelar</Button>
-          <Button variant="contained" color="error" onClick={() => void confirmarAnularBloqueo()} disabled={guardando}>Anular</Button>
+          <Button variant="contained" color="error" onClick={() => void confirmarAnularBloqueo()} disabled={guardando}>{guardando ? <CircularProgress size={20} color="inherit" /> : 'Anular'}</Button>
         </DialogActions>
       </Dialog>
 

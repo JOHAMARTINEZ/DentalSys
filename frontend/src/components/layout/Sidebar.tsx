@@ -24,6 +24,7 @@ import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutl
 
 import { cerrarSesion, getRol, ROL_LABEL } from '../../services/api'
 import type { Rol } from '../../services/api'
+import { temaDeRol } from './temaRol'
 
 /* =========================================================
    MENÚ LATERAL DEL PORTAL DE GESTIÓN
@@ -36,11 +37,7 @@ const SIDEBAR_WIDTH = 264
 const C = {
   navy: '#0a1628',
   navy2: '#10264a',
-  blueLight: '#60a5fa',
-  cyan: '#22d3ee',
 }
-
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
 
 interface MenuItem {
   label: string
@@ -118,6 +115,7 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
   const rol = getRol()
+  const tema = temaDeRol(rol)
   const opciones = MENU.filter((item) => rol !== null && item.roles.includes(rol))
 
   const irA = (path: string) => {
@@ -154,8 +152,8 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             borderRadius: 3,
             display: 'grid',
             placeItems: 'center',
-            background: GRADIENT,
-            boxShadow: '0 10px 24px -10px rgba(34,211,238,.7)',
+            background: tema.gradiente,
+            boxShadow: `0 10px 24px -10px ${tema.sombra}`,
           }}
         >
           <MedicalServicesOutlinedIcon sx={{ color: '#fff' }} />
@@ -165,28 +163,46 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             Más Dent
           </Typography>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,.6)' }}>
-            Gestión · DentalSys
+            DentalSys · Gestión
           </Typography>
         </Box>
       </Box>
 
+      {/* Espacio de trabajo del rol */}
       {rol && (
-        <Box sx={{ px: 2.5, pb: 2 }}>
+        <Box
+          sx={{
+            mx: 1.5,
+            mb: 2.5,
+            p: 1.5,
+            borderRadius: 3,
+            position: 'relative',
+            overflow: 'hidden',
+            backgroundColor: 'rgba(255,255,255,.05)',
+            border: '1px solid rgba(255,255,255,.08)',
+          }}
+        >
           <Box
+            aria-hidden
+            sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: tema.gradiente }}
+          />
+          <Typography
             sx={{
-              display: 'inline-flex',
-              px: 1.25,
-              py: 0.4,
-              borderRadius: 999,
-              fontSize: '0.72rem',
+              fontSize: '0.7rem',
               fontWeight: 700,
-              color: C.cyan,
-              backgroundColor: 'rgba(34,211,238,.12)',
-              border: '1px solid rgba(34,211,238,.25)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: tema.light,
             }}
           >
             {ROL_LABEL[rol]}
-          </Box>
+          </Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.3 }}>
+            {tema.espacio}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,.55)', lineHeight: 1.3, display: 'block' }}>
+            {tema.lema}
+          </Typography>
         </Box>
       )}
 
@@ -218,8 +234,8 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                 px: 1.5,
                 borderRadius: 2.5,
                 color: activo ? '#fff' : 'rgba(255,255,255,.72)',
-                background: activo ? 'rgba(96,165,250,.16)' : 'transparent',
-                boxShadow: activo ? 'inset 3px 0 0 #22d3ee' : 'none',
+                background: activo ? 'rgba(255,255,255,.10)' : 'transparent',
+                boxShadow: activo ? `inset 3px 0 0 ${tema.light}` : 'none',
                 transition: 'background-color .2s, color .2s',
                 '&:hover': {
                   backgroundColor: 'rgba(255,255,255,.08)',
@@ -227,7 +243,7 @@ function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 38, color: activo ? C.cyan : 'inherit' }}>
+              <ListItemIcon sx={{ minWidth: 38, color: activo ? tema.light : 'inherit', transition: 'color .2s' }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText

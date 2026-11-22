@@ -33,7 +33,8 @@ import type { Rol } from '../services/api'
      o se recargue la página.
 ========================================================= */
 
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)'
+// Degradado del color del rol (ver components/layout/temaRol.ts)
+const GRADIENT = 'var(--rol-gradiente)'
 const MAX_CARACTERES = 1000
 
 interface Mensaje {
@@ -282,7 +283,7 @@ function AsistenteIA() {
               zIndex: (t) => t.zIndex.drawer - 1,
               color: '#fff',
               background: GRADIENT,
-              boxShadow: '0 12px 30px rgba(37,99,235,.35)',
+              boxShadow: '0 12px 30px var(--rol-sombra)',
               '&:hover': { background: GRADIENT, filter: 'brightness(1.05)' },
             }}
           >

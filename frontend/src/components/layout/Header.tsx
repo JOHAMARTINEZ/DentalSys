@@ -24,16 +24,51 @@ import {
   getUsuarioSesion,
   ROL_LABEL,
 } from '../../services/api'
+import type { Rol } from '../../services/api'
+import { temaDeRol } from './temaRol'
 
-// Título que se muestra según la página actual
-const TITULOS: Record<string, { titulo: string; subtitulo: string }> = {
-  '/gestion/inicio': { titulo: 'Inicio', subtitulo: 'Resumen del día en la clínica' },
-  '/gestion/pacientes': { titulo: 'Pacientes', subtitulo: 'Registro y datos de contacto' },
-  '/gestion/agenda': { titulo: 'Agenda', subtitulo: 'Citas por día, odontólogo y sucursal' },
-  '/gestion/horarios': { titulo: 'Horarios', subtitulo: 'Horario semanal y bloqueos de agenda' },
-  '/gestion/ficha-clinica': { titulo: 'Ficha clínica', subtitulo: 'Antecedentes y atenciones' },
+// Título que se muestra según la página actual (y, si corresponde, según el rol)
+interface Titulo {
+  titulo: string
+  subtitulo: string
+  porRol?: Partial<Record<Rol, string>>
+}
+
+const TITULOS: Record<string, Titulo> = {
+  '/gestion/inicio': {
+    titulo: 'Inicio',
+    subtitulo: 'Resumen del día en la clínica',
+    porRol: {
+      ADMIN: 'Panel de administración de la clínica',
+      RECEPCIONISTA: 'Panel de recepción del día',
+      ODONTOLOGO: 'Tu jornada clínica de hoy',
+    },
+  },
+  '/gestion/pacientes': {
+    titulo: 'Pacientes',
+    subtitulo: 'Registro y datos de contacto',
+    porRol: { ODONTOLOGO: 'Consulta de datos y contacto de pacientes' },
+  },
+  '/gestion/agenda': {
+    titulo: 'Agenda',
+    subtitulo: 'Citas por día, odontólogo y sucursal',
+    porRol: { ODONTOLOGO: 'Tus citas por día y semana' },
+  },
+  '/gestion/horarios': {
+    titulo: 'Horarios',
+    subtitulo: 'Horario semanal y bloqueos de agenda',
+    porRol: { ODONTOLOGO: 'Tu horario semanal y bloqueos' },
+  },
+  '/gestion/ficha-clinica': { titulo: 'Ficha clínica', subtitulo: 'Antecedentes, odontograma y atenciones' },
   '/gestion/tratamientos': { titulo: 'Tratamientos', subtitulo: 'Catálogo y valores de referencia' },
-  '/gestion/presupuestos': { titulo: 'Presupuestos', subtitulo: 'Tratamientos, abonos y saldos' },
+  '/gestion/presupuestos': {
+    titulo: 'Presupuestos',
+    subtitulo: 'Tratamientos, abonos y saldos',
+    porRol: {
+      ODONTOLOGO: 'Planes de tratamiento de tus pacientes',
+      RECEPCIONISTA: 'Respuestas de pacientes, abonos y saldos',
+    },
+  },
   '/gestion/pagos': { titulo: 'Pagos', subtitulo: 'Abonos, comprobantes y caja' },
   '/gestion/usuarios': { titulo: 'Usuarios', subtitulo: 'Cuentas del personal y permisos' },
 }
@@ -52,9 +87,11 @@ function Header({ onMenuClick }: HeaderProps) {
   const usuario = getUsuarioSesion()
   const inicial = nombre.charAt(0).toUpperCase()
 
+  const tema = temaDeRol(rol)
   const ruta = Object.keys(TITULOS).find((clave) => location.pathname.startsWith(clave))
-  const encabezado = ruta
-    ? TITULOS[ruta]
+  const pagina = ruta ? TITULOS[ruta] : null
+  const encabezado = pagina
+    ? { titulo: pagina.titulo, subtitulo: (rol && pagina.porRol?.[rol]) || pagina.subtitulo }
     : { titulo: 'Gestión clínica', subtitulo: 'Clínica Más Dent' }
 
   const salir = () => {
@@ -74,6 +111,17 @@ function Header({ onMenuClick }: HeaderProps) {
         color: 'text.primary',
         borderBottom: '1px solid',
         borderColor: 'divider',
+        // Línea fina con el color del rol
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: -1,
+          height: 2,
+          background: tema.gradiente,
+          opacity: 0.85,
+        },
       }}
     >
       <Toolbar sx={{ minHeight: { xs: 64, sm: 72 }, px: { xs: 2, sm: 3, lg: 4 }, gap: 1.5 }}>
@@ -124,7 +172,7 @@ function Header({ onMenuClick }: HeaderProps) {
               height: 36,
               fontSize: '0.9rem',
               fontWeight: 800,
-              background: 'linear-gradient(135deg, #2563eb 0%, #22d3ee 100%)',
+              background: tema.gradiente,
             }}
           >
             {inicial}

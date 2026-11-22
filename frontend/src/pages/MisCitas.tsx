@@ -26,6 +26,7 @@ import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
 import NotesOutlinedIcon from '@mui/icons-material/NotesOutlined'
 
 import { apiGet, apiPut, mensajeError } from '../services/api'
+import { alCerrar } from '../services/dialogos'
 
 /* =========================================================
    MIS CITAS (portal del paciente)
@@ -223,7 +224,7 @@ function MisCitas() {
             </Box>
           </Card>
 
-        <Dialog open={cancelando !== null} onClose={() => !guardando && setCancelando(null)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 5 } } }}>
+        <Dialog open={cancelando !== null} onClose={alCerrar(() => setCancelando(null), { bloqueado: guardando })} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: 5 } } }}>
           <DialogTitle sx={{ fontWeight: 800 }}>¿Cancelar esta cita?</DialogTitle>
           <DialogContent>
             {errorCancelar && <Alert severity="error" sx={{ mb: 2 }}>{errorCancelar}</Alert>}

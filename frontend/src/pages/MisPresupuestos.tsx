@@ -25,6 +25,7 @@ import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 
 import { apiGet, apiPut, mensajeError } from '../services/api'
 import { imprimirPresupuesto } from '../services/imprimir'
+import { alCerrar } from '../services/dialogos'
 
 /* =========================================================
    MIS PRESUPUESTOS (portal del paciente)
@@ -190,7 +191,7 @@ function MisPresupuestos() {
         })}
       </Stack>
 
-      <Dialog open={respuesta !== null} onClose={() => !guardando && setRespuesta(null)} fullWidth maxWidth="xs">
+      <Dialog open={respuesta !== null} onClose={alCerrar(() => setRespuesta(null), { bloqueado: guardando })} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 800 }}>{respuesta?.estado === 'ACEPTADO' ? '¿Aceptar este presupuesto?' : '¿Rechazar este presupuesto?'}</DialogTitle>
         <DialogContent>
           {errorRespuesta && <Alert severity="error" sx={{ mb: 2 }}>{errorRespuesta}</Alert>}
