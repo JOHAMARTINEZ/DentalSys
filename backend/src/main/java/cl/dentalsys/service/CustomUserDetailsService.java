@@ -2,6 +2,7 @@ package cl.dentalsys.service;
 
 import cl.dentalsys.model.Usuario;
 import cl.dentalsys.repository.UsuarioRepository;
+import cl.dentalsys.util.RutValidator;
 
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -45,6 +46,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                 )
                 .or(() ->
                     usuarioRepository.findByRut(identificador)
+                )
+                // RUT escrito con puntos o guion (ej: 12.345.678-5)
+                .or(() ->
+                    usuarioRepository.findByRut(
+                        RutValidator.normalizar(identificador)
+                    )
                 )
                 .orElseThrow(() ->
                     new UsernameNotFoundException(

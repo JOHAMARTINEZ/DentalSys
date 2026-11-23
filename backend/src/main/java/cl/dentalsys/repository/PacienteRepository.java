@@ -9,5 +9,7 @@ public interface PacienteRepository extends JpaRepository<Paciente, Integer> {
 
     Optional<Paciente> findByRut(String rut);
 
+    Optional<Paciente> findByUsuarioIdUsuario(Integer idUsuario);
+
     boolean existsByRut(String rut);
 }

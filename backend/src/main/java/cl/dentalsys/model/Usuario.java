@@ -1,5 +1,6 @@
 package cl.dentalsys.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.time.LocalDateTime;
 
 
 
@@ -40,6 +43,8 @@ public class Usuario {
     @Column(name = "username", nullable = false, unique = true, length = 50)
     private String username;
 
+    // Nunca se envía al frontend
+    @JsonIgnore
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
@@ -50,6 +55,10 @@ public class Usuario {
     @JdbcTypeCode(SqlTypes.TINYINT)
     @Column(name = "estado", nullable = false)
     private Integer estado = 1;
+
+    // La fecha la pone la base de datos (DEFAULT CURRENT_TIMESTAMP)
+    @Column(name = "fecha_creacion", insertable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
 
     public Usuario() {
     }
@@ -132,5 +141,8 @@ public class Usuario {
 
 public void setEstado(Integer estado) {
     this.estado = estado;
+    }
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
 }

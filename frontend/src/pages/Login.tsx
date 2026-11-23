@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ChangeEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
@@ -22,6 +22,7 @@ import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined'
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined'
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 
 const API_URL = 'http://localhost:8080'
 
@@ -99,6 +100,8 @@ function AuthBenefit({
 
 function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const sesionExpirada = searchParams.get('sesion') === 'expirada'
 
   // Usuario recordado:
   // se carga directamente dentro del estado inicial.
@@ -434,6 +437,14 @@ function Login() {
                 maxWidth: 430,
               }}
             >
+              <Button
+                startIcon={<ArrowBackRoundedIcon />}
+                onClick={() => navigate('/')}
+                sx={{ mb: 2, ml: -1, textTransform: 'none', fontWeight: 600 }}
+              >
+                Volver al inicio
+              </Button>
+
               <Box sx={{ mb: 4 }}>
                 <Typography
                   variant="h4"
@@ -454,6 +465,12 @@ function Login() {
                   DentalSys.
                 </Typography>
               </Box>
+
+              {sesionExpirada && !error && (
+                <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                  Tu sesión expiró. Inicia sesión nuevamente para continuar.
+                </Alert>
+              )}
 
               {error && (
                 <Alert
@@ -600,6 +617,18 @@ function Login() {
                   </Button>
                 </Stack>
               </Box>
+
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 3, textAlign: 'center' }}>
+                ¿Eres paciente y no tienes cuenta?{' '}
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => navigate('/registro')}
+                  sx={{ p: 0, border: 0, bgcolor: 'transparent', color: 'primary.main', fontWeight: 700, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Crear cuenta
+                </Box>
+              </Typography>
 
               <Divider sx={{ my: 4 }} />
 
